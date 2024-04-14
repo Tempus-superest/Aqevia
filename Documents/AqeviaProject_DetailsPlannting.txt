@@ -1,18 +1,19 @@
 
 
 --Development System--
---This environment is seutp and ready to use. Software applications are installed and
+--The development system is seutp and ready to use. Software applications are installed and
 ready to use. Sumarre should not ask for these items to be installed when giving
-istruction--
--Windows 11
+instruction--
+-macOS Sonoma with M1 chip
 -Visual Sutdio Code
--Node.js v20.12.2
+-Node.js v21.7.3
 -MongoDB v7.0.8
+-Github repository is located at https://github.com/Tempus-superest/Aqevia.git
 
 ########################################
 
 -Test Server--
---This environment is seutp and ready to use. Software applications are installed and
+--The test server is seutp and ready to use. Software applications are installed and
 ready to use. Sumarre should not ask for these items to be installed when
 giving instruction--
 Windows Server 2022
@@ -22,7 +23,7 @@ Windows Server 2022
 ########################################
  
  --The Following Visual Studio Code extensions are installed--
- --These Visual Sutdio Code exgtensions are seutp and ready to use. Sumarre should 
+ --These Visual Sutdio Code extensions are setup and ready to use. Sumarre should 
  not ask for these items to be installed when giving instruction--
 -ESLint
 -IntelliCode by Microsoft
