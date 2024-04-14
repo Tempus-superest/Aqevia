@@ -1,0 +1,215 @@
+
+
+--Development System--
+--This environment is seutp and ready to use. Software applications are installed and
+ready to use. Sumarre should not ask for these items to be installed when giving
+istruction--
+-Windows 11
+-Visual Sutdio Code
+-Node.js v20.12.2
+-MongoDB v7.0.8
+
+########################################
+
+-Test Server--
+--This environment is seutp and ready to use. Software applications are installed and
+ready to use. Sumarre should not ask for these items to be installed when
+giving instruction--
+Windows Server 2022
+-Node.js v20.12.2
+-MongoDB v7.0.8
+
+########################################
+ 
+ --The Following Visual Studio Code extensions are installed--
+ --These Visual Sutdio Code exgtensions are seutp and ready to use. Sumarre should 
+ not ask for these items to be installed when giving instruction--
+-ESLint
+-IntelliCode by Microsoft
+-Prettier
+-Simple React Snippets
+-MongoDB for VS Code
+-Lua by sumneko
+-Path Intellisense
+-Thunder Client by Ranga Vadhineni
+-Github CoPilot
+-GitHub CoPilot Chat
+
+########################################
+
+--Aqevia Project Requirements--
+Must-Have:
+-A monolithic server software application (AqeviaCore) capable of running at least one MUD game world, designed with the infrastructure to support multiple game worlds in the future. Each game world will be contained in its 
+own database to ensure separation and manageability.
+-A game world builder tool (AqeviaBuilder) accessible via a web client, enabling game world admins to create, modify, and manage game worlds. This includes the capability to craft rooms, items, and basic interactions within 
+the game world.
+-A functional web client for end-users (AqeviaClient), allowing players to log in, access, and interact with the MUD game world, with plans for iterative enhancements based on player feedback and technological advancements.
+Ensuring that the architecture is modular from the start to facilitate easier updates, maintenance, and the addition of new features.
+Should-Have:
+-A web-based administration panel (AqeviaAdmin) for server monitoring, offering functionalities for health checks and administrative tasks like restarting game worlds.
+-Integration of the Lua scripting language for the creation of scripted actions and interactions within the game world, enhancing the complexity and depth of gameplay.
+-Capability for the game world builder tool to integrate with the ChatGPT API, assisting in the generation of descriptive text for rooms, items, and possibly aiding in Lua script creation.
+-Initial set of basic gameplay features in the web client for end-users, with a roadmap for gradual expansion to incorporate more advanced functionalities and user interfaces.
+-Incorporate automated testing frameworks from the start. Even simple unit tests and integration tests can significantly improve code quality and make future changes safer and easier.
+-Basic security measures for user authentication and data protection, with an eye toward more advanced security protocols as the project evolves.
+Could-Have:
+-Advanced AI-assisted features for the game world builder, including more sophisticated scripting support and dynamic content generation.
+Won't Have Initially (but open for future development):
+-Scalability features designed to support a high user base, due to the niche market for MUD games.
+-Support for scripting languages beyond Lua in the initial development phase, focusing instead on ensuring a solid, user-friendly integration of Lua for game world customization.
+
+
+--Method--
+Architectural Overview
+-Server Application (AqeviaCore):
+        Technology: Node.js
+        Framework: Express.js for handling HTTP requests and providing a structure for the application.
+        Database: MongoDB, with a separate database instance for each game world for isolation and manageability.
+        Authentication: Implement JWT (JSON Web Tokens) for secure user authentication.
+        API Design: RESTful API for communication between the server, web clients, and the game world builder tool.
+-Web-based Game World Builder Tool (AqeviaBuilder):
+        Frontend Technology: React
+        Communication: Interacts with the server application via RESTful API calls to fetch game world data and send updates or new content.
+        Features: Interface for creating and modifying game worlds, including rooms, items, and NPCs. Integration with the Lua scripting environment for adding interactive elements.
+-Web Client for End-Users (AqeviaClient):
+        Frontend Technology: React
+        Communication: Uses WebSockets for real-time bidirectional communication between the client and the server, enabling live updates and interactions within the game world.
+-Automated Testing:
+        Unit Testing: Jest for backend and frontend unit tests.
+        Integration Testing: Supertest for API endpoint testing.
+-Administration Panel (AqeviaAdmin):
+        Technology: Integrated within the server application, accessible via a web interface built with React.
+        Features: Dashboard for monitoring server health, managing game worlds (including restarts), and viewing basic analytics.
+
+
+--Proposed Development Strategies--
+- Modular Development:
+        Adopt a modular development approach, ensuring components like game world management, user authentication, and live game interactions are developed as independent modules. This facilitates easier maintenance and future expansions.
+-MVP Focus:
+        Start with a minimal viable product (MVP) that includes essential features: one game world capability, basic game world builder tool, and a functional end-user web client. Prioritize getting these core features operational and refined based on user feedback.
+-Iterative Development and Feedback Loop:
+        Employ an agile development methodology, working in sprints to gradually build out features and incorporate feedback from early users to guide further development.
+
+
+
+--Detailed Implementation Plan--
+-Initial Setup Detailed Tasks
+    Environment and Tools Setup:
+        Install Node.js, MongoDB, and a code editor like Visual Studio Code.
+        Set up MongoDB with separate databases for initial testing purposes.
+        Initialize React projects for the game world builder and the end-user client using Create React App.
+    Version Control and Project Management:
+        Create a GitHub repository, ensuring to ignore node_modules and environment files.
+        Set up GitHub Projects for task tracking, categorizing tasks into 'To Do', 'In Progress', and 'Done'.
+        Document the setup process and basic project architecture in the README.md file for future contributors.
+-Sprint 1: Basic Server and Database Integration
+    Server Setup:
+        Scaffold the Express.js application structure.
+        Implement basic authentication using JWTs to manage user sessions.
+        Design MongoDB schemas for game world entities (e.g., players, rooms, items).
+    API Development:
+        Develop RESTful endpoints for user registration, login, and basic game world interactions.
+        Write API documentation using tools like Swagger or Postman.
+    Testing:
+        Set up Jest for the server-side unit tests.
+        Write initial tests for authentication endpoints.
+Sprint 2: Game World Builder Tool Development
+    UI Development:
+        Design and implement the UI for the game world builder, focusing on usability and functionality for creating rooms and items.
+        Use React components and state management techniques to handle the application's interactivity.
+    Builder-Server Integration:
+        Implement API calls from the builder tool to the server for saving and retrieving game world data.
+        Ensure data validation both client-side and server-side to maintain data integrity.
+    Testing:
+        Integrate Jest with React for unit testing components.
+        Test API integration points for reliability and performance.
+Sprint 3: End-User Web Client Development
+    Client Functionality:
+        Implement the text-based interface for game world interaction, including room navigation and item interaction.
+        Set up WebSocket communication for real-time updates and interactions.
+    User Experience:
+        Design a clean, intuitive interface that enhances readability and user engagement.
+        Implement responsive design for accessibility across devices.
+    Testing:
+        Conduct user experience tests to refine the interface.
+        Test WebSocket communication for stability and latency issues.
+Sprint 4: Administration Panel and Testing
+    Administration Panel Development:
+        Implement the administration panel for server and game world management tasks.
+        Include features for monitoring server health, managing user accounts, and restarting game worlds.
+    Advanced Testing:
+        Expand testing coverage to include integration testing with Supertest.
+        Implement end-to-end tests for critical workflows using tools like Cypress.
+    Security and Optimization:
+        Review security measures, ensuring data protection and secure API endpoints.
+        Optimize performance, focusing on database queries and API response times.
+
+###############################################
+
+--AqeviaCore Technical Design Plan--
+
+--NPM Packages installed on the dev environment workstation. These node modules are
+installed and ready to use. Sumarre should not ask for these modules to be installed when giving
+instruction. If a module is needed but not present on this list then Sumarre will
+instruct me to install it and update this document--
+1. Express.js
+    Usage: Serves as the backbone of your server, handling HTTP requests, routing, and middleware. Express.js will be used to create and manage different routes that correspond to game actions and administrative tasks. It facilitates the modular structure of your application, making it easier to maintain and scale.
+    Technical Narrative: Each route can handle specific tasks like user authentication, game state updates, and data retrieval. Middleware functions can be used to manage request parsing, error handling, and security enhancements.
+2. mongoose
+    Usage: Manages interactions between your Node.js application and MongoDB. Mongoose provides a schema-based solution to model your game data, which includes players, game worlds, and other entities.
+    Technical Narrative: Mongoose schemas will define the structure of the game data, enforce validation rules, and create queryable models for accessing the data efficiently. It also handles data integrity and transactional operations, ensuring the consistency of your game state.
+3. bcryptjs
+    Usage: Utilized for hashing and salting user passwords before they are stored in the database, providing a layer of security against unauthorized access.
+    Technical Narrative: When a user registers or changes their password, bcryptjs will be used to hash the password before it is saved. This hash will also be used for verification during user logins, ensuring that plain-text passwords are never handled directly by the server.
+4. jsonwebtoken
+    Usage: Facilitates the creation and verification of JSON Web Tokens, which are used to manage sessions and maintain user authentication state across HTTP requests.
+    Technical Narrative: Upon successful authentication, a JWT will be issued to the user. This token will be sent with subsequent requests to the server to verify the user's identity and permissions without needing to re-authenticate.
+5. socket.io
+    Usage: Enables real-time communication between the server and connected clients, crucial for updating game states, handling player interactions, and supporting live chat functionalities.
+    Technical Narrative: Socket.io will be integrated into the server to manage WebSocket connections that allow for bidirectional communication. This setup will support features like real-time notifications, in-game events, and multiplayer interactions.
+6. body-parser
+    Usage: Parses incoming request bodies, making it easier to extract and handle form and JSON data sent by clients.
+    Technical Narrative: Integrated as middleware in your Express app, it will automatically parse JSON and URL-encoded data from incoming requests, making this data readily accessible through req.body in your route handlers.
+7. cors
+    Usage: Configured to allow cross-origin requests, essential if your client-side application is hosted on a different domain than your server.
+    Technical Narrative: CORS settings will be defined to specify which domains can access your server, what HTTP methods are allowed, and whether credentials can be included with requests. This is important for ensuring that your client application can interact with your server securely.
+8. helmet
+    Usage: Automatically sets several HTTP headers to help protect your server from some common vulnerabilities like XSS and clickjacking.
+    Technical Narrative: Helmet will be configured as part of your server's middleware to enhance security by setting headers that configure browser built-in protections and restrict potentially dangerous actions.
+9. morgan
+    Usage: Logs details about HTTP requests to your server, aiding in monitoring and debugging.
+    Technical Narrative: Morgan will be configured to log requests in a 'combined' format, providing detailed information such as remote IP, request method, URL, response status, and response time. This data is invaluable for troubleshooting and understanding your application’s traffic patterns.
+10. jest
+    Usage: Provides a framework for writing and running unit tests to ensure that individual components of your server function as expected.
+    Technical Narrative: Jest will be used to test server-side logic, database interactions, and API endpoints individually. Tests will be run against mocked data and functionalities to ensure they perform correctly in isolation.
+11. supertest
+    Usage: Works with Jest to perform integration tests by simulating HTTP requests to your server, verifying that your server responds correctly as a whole.
+    Technical Narrative: Supertest will be used to simulate client requests and test the integration of your server routes and middleware. This helps ensure that your server behaves as expected when handling real requests.
+12. dotenv
+    Usage: Used to load environment variables from a .env file into process.env. 
+    Technical Narrative: In Node.js applications, managing configuration data such as database URLs, API keys, and other secrets directly within the codebase is not recommended due to security risks and the lack of flexibility. The dotenv module addresses these issues by enabling developers to maintain these configurations in an external file, .env, which is not included in version control.
+13. eslint
+    Usage: ESLint is a powerful tool for identifying and reporting on patterns found in ECMAScript/JavaScript code
+    Technical Narrative: ESLint helps maintain code quality and consistency across your project. It's particularly useful in projects that involve multiple developers or when maintaining a standard coding style is crucial for readability and maintainability. ESLint is extensible, allowing developers to write their own rules or use plugins from the community to support additional languages or frameworks like React.
+14 - mongodb-memory-server 
+    Usage:
+    Technical Narrative:
+
+
+###############################################
+
+--AqeviaClient Technical Design Plan--
+
+This section is pending creation
+
+###############################################
+
+--AqeviaBuilder Technical Design Plan--
+
+This section is pending creation
+
+###############################################
+
+--AqeviaAdmin Technical Design Plan--
+
+This section is pending creation
