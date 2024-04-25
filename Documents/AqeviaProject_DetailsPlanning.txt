@@ -40,8 +40,7 @@ Windows Server 2022
 
 --Aqevia Project Requirements--
 Must-Have:
--A monolithic server software application (AqeviaCore) capable of running at least one MUD game world, designed with the infrastructure to support multiple game worlds in the future. Each game world will be contained in its 
-own database to ensure separation and manageability.
+-A monolithic server software application (AqeviaCore) capable of running one MUD game world.
 -A game world builder tool (AqeviaBuilder) accessible via a web client, enabling game world admins to create, modify, and manage game worlds. This includes the capability to craft rooms, items, and basic interactions within 
 the game world.
 -A functional web client for end-users (AqeviaClient), allowing players to log in, access, and interact with the MUD game world, with plans for iterative enhancements based on player feedback and technological advancements.

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aqevia MUD Client</title>
+    <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" integrity="sha384-TZYRgX6HMRQ7b4pkLbb5VFvJcL9I8UFvcy7b8AYfN0Mf0Tu0siiYVkhHCkVjF3Ox" crossorigin="anonymous"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #messages { margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; }
+        input { width: calc(100% - 22px); padding: 10px; }
+    </style>
+</head>
+<body>
+    <div id="messages"></div>
+    <input type="text" id="input" placeholder="Type a message...">
+    <script>
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            console.log('Connected to the server');
+        });
+
+        socket.on('message', function(msg) {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('p');
+            messageElement.textContent = msg;
+            messages.appendChild(messageElement);
+        });
+
+        const input = document.getElementById('input');
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                socket.emit('message', input.value);
+                input.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
