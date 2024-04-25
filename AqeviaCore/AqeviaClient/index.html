@@ -8,10 +8,16 @@
     <style>
         body { font-family: Arial, sans-serif; }
         #messages { margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; }
-        input { width: calc(100% - 22px); padding: 10px; }
+        input, button { width: calc(100% - 22px); padding: 10px; margin-top: 5px; }
     </style>
 </head>
 <body>
+    <h2>Register</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="register()">Register</button>
+
+    <h2>Chat</h2>
     <div id="messages"></div>
     <input type="text" id="input" placeholder="Type a message...">
     <script>
@@ -35,6 +41,22 @@
                 input.value = '';
             }
         });
+
+        function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.text())
+            .then(data => alert('Registration successful'))
+            .catch(error => alert('Error registering user: ' + error));
+        }
     </script>
 </body>
 </html>
