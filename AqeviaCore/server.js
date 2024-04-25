@@ -13,7 +13,7 @@ const io = socketIo(server);
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect('mongodb://10.0.254.121:27017/Aqevia_Test', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://localhost:27017/Aqevia_Test', { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
