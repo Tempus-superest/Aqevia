@@ -4,13 +4,14 @@ const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const characterRoutes = require('./routes/characterRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const itemRoutes = require('./routes/itemRoutes');  // Ensure you've created this file
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
 // MongoDB Connection
-mongoose.connect('mongodb://10.0.254.121:27017/Aqevia_Test', {
+mongoose.connect('mongodb://localhost:27017/Aqevia_Test', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
@@ -20,12 +21,13 @@ db.once('open', function () {
   console.log('Connected to MongoDB');
 });
 
-app.use(express.json());  // for parsing application/json
+app.use(express.json());  // For parsing application/json
 app.use(express.static('AqeviaClient'));  // Serve static files
 
 // Routes
 app.use('/characters', characterRoutes);
 app.use('/rooms', roomRoutes);  // Use room routes
+app.use('/items', itemRoutes);  // Use item routes
 
 // Socket.io for real-time communication
 io.on('connection', (socket) => {
