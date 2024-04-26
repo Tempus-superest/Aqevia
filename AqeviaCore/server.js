@@ -4,7 +4,8 @@ const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const characterRoutes = require('./routes/characterRoutes');
 const roomRoutes = require('./routes/roomRoutes');
-const itemRoutes = require('./routes/itemRoutes');  // Ensure you've created this file
+const itemRoutes = require('./routes/itemRoutes');
+const authRoutes = require('./routes/auth'); // Added auth routes
 
 const app = express();
 const server = http.createServer(app);
@@ -21,13 +22,14 @@ db.once('open', function () {
   console.log('Connected to MongoDB');
 });
 
-app.use(express.json());  // For parsing application/json
-app.use(express.static('AqeviaClient'));  // Serve static files
+app.use(express.json()); // For parsing application/json
+app.use(express.static('AqeviaClient')); // Serve static files
 
 // Routes
 app.use('/characters', characterRoutes);
-app.use('/rooms', roomRoutes);  // Use room routes
-app.use('/items', itemRoutes);  // Use item routes
+app.use('/rooms', roomRoutes);
+app.use('/items', itemRoutes);
+app.use(authRoutes); // Include authentication routes
 
 // Socket.io for real-time communication
 io.on('connection', (socket) => {
