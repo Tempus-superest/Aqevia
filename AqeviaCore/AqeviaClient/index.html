@@ -76,7 +76,6 @@
                 alert(error.message);
             });
         }
-
         function login() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
@@ -103,17 +102,40 @@
             });
         }
 
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Logout failed: ' + response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                if (data.message) {
+                    alert('Logout successful: ' + data.message);
+                    toggleChatVisibility(false);
+                }
+            })
+            .catch(error => {
+                alert('Logout error: ' + error.message);
+            });
+        }
+
         function toggleChatVisibility(show) {
             const authForm = document.getElementById('authForm');
             const chat = document.getElementById('chat');
+            const logoutButton = document.getElementById('logoutButton');
             if (show) {
                 authForm.classList.add('hidden');
                 chat.classList.remove('hidden');
+                logoutButton.classList.remove('hidden');
             } else {
                 authForm.classList.remove('hidden');
                 chat.classList.add('hidden');
+                logoutButton.classList.add('hidden');
             }
         }
     </script>
+    <button id="logoutButton" class="hidden" onclick="logout()">Logout</button>
 </body>
 </html>
