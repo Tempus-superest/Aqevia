@@ -7,24 +7,30 @@
     <script src="https://cdn.socket.io/4.4.0/socket.io.min.js" crossorigin="anonymous"></script>
     <style>
         body { font-family: Arial, sans-serif; }
-        #messages { margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; }
+        #messages, #input { margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; }
         input, button { width: calc(100% - 22px); padding: 10px; margin-top: 5px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h2>Register</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="register()">Register</button>
+    <div id="authForm">
+        <h2>Register</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="register()">Register</button>
 
-    <h2>Login</h2>
-    <input type="text" id="loginUsername" placeholder="Username">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button onclick="login()">Login</button>
+        <h2>Login</h2>
+        <input type="text" id="loginUsername" placeholder="Username">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
 
-    <h2>Chat</h2>
-    <div id="messages"></div>
-    <input type="text" id="input" placeholder="Type a message...">
+    <div id="chat" class="hidden">
+        <h2>Chat</h2>
+        <div id="messages"></div>
+        <input type="text" id="input" placeholder="Type a message...">
+    </div>
+
     <script>
         const socket = io('http://10.0.254.121:3000');
 
@@ -64,6 +70,7 @@
             })
             .then(data => {
                 alert('Registration successful: ' + data.message);
+                toggleChatVisibility(true);
             })
             .catch(error => {
                 alert(error.message);
@@ -88,12 +95,24 @@
             .then(data => {
                 if (data.message) {
                     alert('Login successful: ' + data.message);
-                    // Further actions upon successful login can be added here.
+                    toggleChatVisibility(true);
                 }
             })
             .catch(error => {
                 alert('Login error: ' + error.message);
             });
+        }
+
+        function toggleChatVisibility(show) {
+            const authForm = document.getElementById('authForm');
+            const chat = document.getElementById('chat');
+            if (show) {
+                authForm.classList.add('hidden');
+                chat.classList.remove('hidden');
+            } else {
+                authForm.classList.remove('hidden');
+                chat.classList.add('hidden');
+            }
         }
     </script>
 </body>
