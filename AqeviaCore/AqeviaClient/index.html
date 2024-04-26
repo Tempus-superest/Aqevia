@@ -17,6 +17,11 @@
     <input type="password" id="password" placeholder="Password">
     <button onclick="register()">Register</button>
 
+    <h2>Login</h2>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button onclick="login()">Login</button>
+
     <h2>Chat</h2>
     <div id="messages"></div>
     <input type="text" id="input" placeholder="Type a message...">
@@ -53,9 +58,30 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.text())
-            .then(data => alert('Registration successful'))
+            .then(response => response.json()) // Assuming server sends back JSON
+            .then(data => alert('Registration successful: ' + data.message))
             .catch(error => alert('Error registering user: ' + error));
+        }
+
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json()) // Assuming server sends back JSON
+            .then(data => {
+                if (data.message) {
+                    alert('Login successful: ' + data.message);
+                    // You can do more here, like redirecting the user or showing the character info
+                }
+            })
+            .catch(error => alert('Login error: ' + error));
         }
     </script>
 </body>
