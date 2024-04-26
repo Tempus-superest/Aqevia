@@ -1,10 +1,37 @@
-// In /routes/auth.js or wherever you handle authentication
+// In /routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const Character = require('../models/Character');
 
+// Registration route
+router.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 12);
+        const newCharacter = new Character({
+            name: "New Adventurer", // Default character name
+            health: 100, // Default health value
+            location: null // No initial location
+        });
+        await newCharacter.save();
+
+        const newUser = new User({
+            username,
+            password: hashedPassword,
+            character: newCharacter._id
+        });
+        await newUser.save();
+        res.status(201).json({ message: "User and character registered successfully!" });
+    } catch (error) {
+        console.error("Registration Error: ", error);
+        res.status(500).send("Error registering user and character");
+    }
+});
+
+// Login route
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 

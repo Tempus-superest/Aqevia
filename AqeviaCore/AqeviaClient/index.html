@@ -58,9 +58,16 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.json()) // Assuming server sends back JSON
-            .then(data => alert('Registration successful: ' + data.message))
-            .catch(error => alert('Error registering user: ' + error));
+            .then(response => {
+                if (!response.ok) throw new Error('Registration failed: ' + response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                alert('Registration successful: ' + data.message);
+            })
+            .catch(error => {
+                alert(error.message);
+            });
         }
 
         function login() {
@@ -74,14 +81,19 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.json()) // Assuming server sends back JSON
+            .then(response => {
+                if (!response.ok) throw new Error('Login failed: ' + response.statusText);
+                return response.json();
+            })
             .then(data => {
                 if (data.message) {
                     alert('Login successful: ' + data.message);
-                    // You can do more here, like redirecting the user or showing the character info
+                    // Further actions upon successful login can be added here.
                 }
             })
-            .catch(error => alert('Login error: ' + error));
+            .catch(error => {
+                alert('Login error: ' + error.message);
+            });
         }
     </script>
 </body>
