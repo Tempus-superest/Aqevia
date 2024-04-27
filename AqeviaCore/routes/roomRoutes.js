@@ -1,45 +1,66 @@
 // roomRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const Room = require('../models/Room');
 
-// POST route to create a new room
-router.post('/create', async (req, res) => {
-    try {
-        const { name, description } = req.body;
-        const newRoom = new Room({ name, description });
-        await newRoom.save();
-        res.status(201).json(newRoom);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
+// GET all rooms
+router.get('/', async (req, res) => {
+  try {
+    const rooms = await Room.find();
+    res.json(rooms);
+  } catch (err) {
+    res.status(500).json({ message: err.message});
+  }
+}); 
+
+// GET single room
+router.get('/:id', async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    res.json(room);
+  } catch (err) {
+    res.status(500).json({ message: err.message});
+  }
 });
 
-// GET route to fetch all rooms
-router.get('/all', async (req, res) => {
-    try {
-        const rooms = await Room.find({}).populate('connections');
-        res.status(200).json(rooms);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+// CREATE a new room
+router.post('/', async (req, res) => {
+  const room = new Room({
+    name: req.body.name,
+    description: req.body.description
+  });
+  
+  try {
+    const newRoom = await room.save();
+    res.status(201).json(newRoom);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
-// POST route to connect two rooms
-router.post('/connect', async (req, res) => {
-    const { roomId, connectToRoomId } = req.body;
-    try {
-        const room = await Room.findById(roomId);
-        if (!room) {
-            return res.status(404).send('Room not found');
-        }
-        // Use the addConnection method from the Room model
-        await room.addConnection(connectToRoomId);
-        res.status(200).send(`Room ${roomId} now connected to ${connectToRoomId}`);
-    } catch (error) {
-        res.status(500).send('Error connecting rooms: ' + error.message);
-    }
+// UPDATE a room
+router.patch('/:id', async (req, res) => {
+   try {
+     const updated = await Room.findByIdAndUpdate(
+       req.params.id,
+       req.body,  
+       { new: true }
+     );
+     res.json(updated);
+   } catch (err) {
+     res.status(400).json({ message: err.message });
+   }
+});
+
+// DELETE a room
+router.delete('/:id', async (req, res) => {
+   try {
+     const deleted = await Room.findByIdAndDelete(req.params.id);
+     res.json({ message: 'Deleted room' });
+   } catch (err) {
+     res.status(500).json({ message: err.message });
+   }
 });
 
 module.exports = router;
-// end roomRoutes.js
