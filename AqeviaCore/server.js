@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/aqevia_test', {
+mongoose.connect('mongodb://localhost:27017/aqevia', {
   useNewUrlParser: true,
   useUnifiedTopology: true  
 });
