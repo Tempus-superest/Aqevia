@@ -1,33 +1,39 @@
 // server.js
 
 const express = require('express');
-const http = require('http'); 
-const socketio = require('socket.io');
+const http = require('http');
+const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./routes/auth');
-const characterRoutes = require('./routes/characterRoutes');
+const characterRoutes = require('./routes/characterRoutes'); 
 const roomRoutes = require('./routes/roomRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
+const io = socketIo(server);
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/Aqevia_Test', {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true  
 });
 
 const db = mongoose.connection;
+
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 db.once('open', () => {
-  console.log('Connected to MongoDB'); 
+  console.log('Connected to MongoDB');
 });
 
-// Player model
-const Player = require('./models/Player');
+// Define Player model
+const Player = mongoose.model('Player', {
+  socketId: String,
+  name: String,
+  room: String
+});
+
 let connectedPlayers = [];
 
 io.on('connection', (socket) => {
@@ -36,7 +42,7 @@ io.on('connection', (socket) => {
 
   const player = new Player({ 
     socketId: socket.id,
-    username: 'Guest'
+    name: 'Guest'
   });
 
   connectedPlayers.push(player);
@@ -45,17 +51,22 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     connectedPlayers = connectedPlayers.filter(p => p.socketId !== socket.id);
-    io.emit('playerLeft', player.username);
+    io.emit('playerLeft', player.name);
+  });
+
+  socket.on('playerMoved', (room) => {
+    player.room = room;
+    io.emit('playerMoved', player);
   });
 
 });
 
 app.use(express.json());
-app.use(express.static('public')); 
+app.use(express.static('AqeviaClient'));
 
 app.use(authRoutes);
 app.use('/characters', characterRoutes);
-app.use('/rooms', roomRoutes);
+app.use('/rooms', roomRoutes); 
 app.use('/items', itemRoutes);
 
 const PORT = process.env.PORT || 3000;
