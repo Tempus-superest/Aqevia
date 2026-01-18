@@ -1,5 +1,5 @@
-#Documents folder
-Documents/
+# Dependency directory
+node_modules/
 
 # Logs
 *.log
