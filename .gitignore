@@ -80,6 +80,7 @@ npm-debug.log*
 
 # VSCode settings
 .vscode/
+.code-workspace
 
 # Editors' backup files and swap files
 *~
