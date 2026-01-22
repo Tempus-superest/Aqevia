@@ -1,6 +1,9 @@
 # Dependency directory
 node_modules/
 
+# Rust build output
+target/
+
 # Logs
 *.log
 npm-debug.log*
@@ -32,6 +35,8 @@ JSCover/
 # dotenv environment variables file
 .env
 .env.test
+.env.*
+!.env.example
 
 # Next.js build output
 .next
@@ -55,8 +60,19 @@ public/
 tmp/
 temp/
 
+# Coverage artifacts
+coverage/
+.coverage/
+
 # MacOS files that may interfere
 .DS_Store
+
+# SQLite/local database files
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # Windows image file caches
 Thumbs.db
@@ -70,7 +86,6 @@ $RECYCLE.BIN/
 
 # npm debug logs
 npm-debug.log*
-202*-**-**T**-**-**_**
 
 # IntelliJ project files
 .idea/
