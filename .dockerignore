@@ -1,2 +1,8 @@
 .git
-node_modules
+target
+src/target
+src/.cargo
+*.rs.bk
+data
+.env*
+docs/tmp

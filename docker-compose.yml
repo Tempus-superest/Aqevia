@@ -1,4 +1,16 @@
+version: "3.8"
 services:
-  aqevia:
-    build: .
-    container_name: aqevia-placeholder
+  aqevia-engine:
+    build:
+      context: .
+    container_name: aqevia-engine
+    restart: unless-stopped
+    ports:
+      - "7878:7878"
+    environment:
+      AQEVIA_SQLITE_PATH: /data/storage.sqlite
+      AQEVIA_OBSERVABILITY_ADDR: 0.0.0.0:7878
+      PERSIST_FLUSH_INTERVAL_MS: 1000
+      PERSIST_BATCH_CAPACITY: 10
+    volumes:
+      - ./data/sqlite:/data
