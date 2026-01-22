@@ -21,11 +21,13 @@
 - `/docs/aqevia-builder.md` — World-building UI design and publishing workflow.
 - `/docs/aqevia-admin.md` — Admin UI design and operator workflows.
 - `/docs/database.md` — persistence model, schema conventions, migrations.
+- `/docs/docker.md` - Docker deployment standards
 - `/docs/testing.md` — test strategy and required coverage expectations.
 - `/docs/versioning.md` — protocol/API versioning and compatibility rules.
 - `/docs/security.md` — auth, secrets handling, input validation, threat notes.
 - `/docs/style.md` — code style, module layout, naming, linting/formatting rules.
 - `/docs/milestones.md` - Breaks Aqevia into milestone deliverables. Each milestone includes goals and acceptance criteria.
+-- Add docker.md reference
 
 ## Terminology
 

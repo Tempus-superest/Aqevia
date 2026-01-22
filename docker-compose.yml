@@ -13,4 +13,6 @@ services:
       PERSIST_FLUSH_INTERVAL_MS: 1000
       PERSIST_BATCH_CAPACITY: 10
     volumes:
-      - ./data/sqlite:/data
+      - aqevia_data:/data
+volumes:
+  aqevia_data:
