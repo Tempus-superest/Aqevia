@@ -44,16 +44,42 @@ This document breaks Aqevia into milestone deliverables. Each milestone includes
 - Observability endpoints (`/health`, `/ready`, `/status`) exist inside the transport layer, honor `/docs/engine/http-conventions.md`, and return the documented JSON shapes that include version, uptime, storage backend, and flush stats.
 - Storage and observability code lives in dedicated crates and modules so future backends and transports can swap in while the Engine remains the only piece deciding when to persist state.
 
-## Milestone 3 — Control plane and data plane contracts
+## Milestone 3 — Control and data plane rollout (split milestones)
 
-### Goals
-- Implement the HTTP control-plane contracts (`/docs/engine/http-conventions.md`, `/docs/engine/builder-api.md`, `/docs/engine/admin-api.md`, `/docs/engine/ai-builder.md`, `/docs/engine/ai-providers.md`) and the WebSocket data-plane contract (`/docs/engine/ws-session.md`, `/docs/engine/protocol.md`, `/docs/engine/ai-runtime.md`).
-- Enforce auth/roles, AI rules (Assist vs Runtime), and the documented endpoint set for Builder/Admin while keeping AI suggestions non-mutating until approved.
+To keep work manageable, Milestone 3 is split into sequenced sub-deliverables that each capture part of the HTTP/WS/AI contract implementation. As soon as these land, the team can proceed immediately to Milestone 4 work on the embedded UIs.
 
-### Acceptance criteria
-- Builder/Admin HTTP APIs exist and return the documented response shapes, enforce roles, and log audit-worthy control-plane actions with inputs validated per `/docs/security.md`.
-- WS endpoint accepts commands, sequences outputs (type/seq), handles keepalive, and obeys the `data plane = WS traffic` rule; client messages trigger Kernel-authoritative effects only.
-- AI Assist endpoints return drafts/proposals without applying them; AI Runtime runs asynchronously and streams safe outputs per `/docs/engine/ai-runtime.md`; provider secrets remain server-side only.
+### Milestone 3.1 — Control-plane APIs and AI Assist
+
+#### Goals
+- Build the HTTP control-plane adapters for Builder, Admin, and AI Assist flows while keeping auth/role enforcement aligned with `/docs/security.md`.
+- Ensure AI Assist endpoints produce drafts/proposals only; state changes must still flow through the Builder/Admin APIs and the `Storage` backend rather than the AI layer.
+
+#### Acceptance criteria
+- Builder/Admin endpoints exist per `/docs/engine/builder-api.md` and `/docs/engine/admin-api.md`, return the documented shapes, validate inputs, and enforce roles (401/403 for unauthenticated/unauthorized callers).
+- AI Assist endpoints mirror `/docs/engine/ai-builder.md`, return draft payloads without mutating durable storage, and reference AI provider config from `/docs/engine/ai-providers.md`.
+- All handlers follow `/docs/engine/http-conventions.md` for content-type, cache-control, error shapes, and pagination/idempotency notes where applicable.
+
+### Milestone 3.2 — WebSocket data plane and AI Runtime
+
+#### Goals
+- Implement the WS session contract described in `/docs/engine/ws-session.md`, message semantics from `/docs/engine/protocol.md`, and asynchronous AI Runtime behavior from `/docs/engine/ai-runtime.md`.
+- Keep the Router responsible for session delivery while the Transport layer handles raw WS frames.
+
+#### Acceptance criteria
+- WS endpoints accept connections, emit sequenced messages (`type`/`seq`), honor keepalive semantics, and deliver AI-enhanced outputs without letting AI mutate state directly.
+- AI Runtime jobs run asynchronously; Kernel never blocks waiting for them, and results surface via the WS protocol with proper safety checks per `/docs/security.md`.
+- Provider secrets stay server-side and respect `/docs/engine/ai-providers.md` timeouts/retries/streaming flags.
+
+### Milestone 3.3 — Docker packaging + single-world deployment
+
+#### Goals
+- Supply Docker assets so the Engine can be built/run reproducibly, while honoring “1 World = 1 deployment unit.”
+- Document the container workflow for operators.
+
+#### Acceptance criteria
+- `Dockerfile`, `.dockerignore`, and `docker-compose.yml` build the Engine, run exactly one instance, map HTTP/WS ports, and mount persisted SQLite storage.
+- Compose defaults expose observability + HTTP/WS endpoints and accept env vars for storage path, `AQEVIA_SQLITE_PATH`, AI provider hooks, and observability port.
+- A `/docs/docker.md` (or equivalent section) explains building/running the image and the single-world constraint so operators know how to start the system in containers.
 
 ## Milestone 4 — Embedded web UIs and shared API libraries
 
