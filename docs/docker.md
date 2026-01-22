@@ -1,29 +1,18 @@
 # Docker deployment
 
-## Configuration
-
-### Dockerfile
-
-### docker-compose
-
-- `AQEVIA_SQLITE_PATH` – path to the SQLite database file (default `/data/storage.sqlite` to keep data inside the durable volume).
-- `AQEVIA_OBSERVABILITY_ADDR` – observability HTTP address (default `0.0.0.0:7878`, exposed via compose port 7878).
-- `PERSIST_FLUSH_INTERVAL_MS` – flush cadence in milliseconds (default `1000`).
-- `PERSIST_BATCH_CAPACITY` – number of pending writes before a flush (default `10`).
-
 ## Overview
+- Each `aqevia-engine` container hosts exactly one **World**; the Compose stack purposely keeps a single service so there are never multiple Worlds inside one Engine instance.
+- The dev image is built from `rust:1.92.0-slim-trixie`, so the toolchain and binary live together in one image (the binary stays at `/usr/local/bin/aqevia-engine` and `/app/VERSION` is embedded there as metadata). Mutable state is isolated inside `/data`, which is backed by the named volume `aqevia_data`.
+- Persistence survives container restarts but is not guaranteed to be upgrade-compatible during the pre‑1.0 phase; if schema changes break compatibility, wiping `aqevia_data` is the supported recovery path. Production releases will later switch to a stable Debian runtime image (multi-stage) so only vetted runtime dependencies ship with the binary.
 
-- Aqevia Engine runs exactly one **World** per container; you get a single immutable image (binary baked into `/usr/local/bin/aqevia-engine`) and a single mutable data volume (`/data`) that holds all durable state.
-- The image contains no writable game files—the binary and `VERSION` are part of the image and are upgraded only by rebuilding/pulling a new image. Anything written at runtime goes under `/data` so it survives container restarts.
-- During early development, persistence is durable across restarts but not necessarily upgrade-compatible; wiping `aqevia_data` is the supported way to recover from incompatible storage changes.
-
-## Build the image
+## Build
 
 ```bash
-docker build -t aqevia-engine:latest .
+docker build -t aqevia-engine:dev .
 ```
 
-The multi-stage Dockerfile compiles the Rust workspace in a `rust` builder image and copies the release `aqevia-engine` binary plus `VERSION` into a slim Debian runtime image. The final image only needs the binary and `/app/VERSION`.
+- The Dockerfile is single-stage for dev parity: it uses `rust:1.92.0-slim-trixie`, installs `ca-certificates`, and runs `cargo fmt`, `cargo clippy`, and `cargo build --release --locked` under `/app/src`, keeping compilation and runtime dependencies in the same image.
+- The release binary is copied into `/usr/local/bin/aqevia-engine` inside that same image, so the container can run immediately after a successful build.
 
 ## Run with Docker Compose
 
@@ -31,24 +20,42 @@ The multi-stage Dockerfile compiles the Rust workspace in a `rust` builder image
 docker compose up --build
 ```
 
-- `docker-compose.yml` defines one `aqevia-engine` service that exposes port `7878`.
-- The service mounts the named volume `aqevia_data` at `/data`, so durable state (including the SQLite database) lives in that volume rather than the container layer.
-- Environment variables in the file point `AQEVIA_SQLITE_PATH` at `/data/storage.sqlite` and configure observability and persistence flush behavior.
+- Compose runs the `aqevia-engine` container as the non-root `aqevia` user, publishes port `7878`, and mounts the named volume `aqevia_data:/data` so `AQEVIA_SQLITE_PATH` can point to `/data/storage.sqlite` without writing into the container layer.
+- The environment variables in compose match the Dockerfile defaults so the observability listener and persistence flush tuning behave identically inside the container.
 
-## Persistence model
+## Configuration
 
-- All writable state lives under `/data` (the bind mount is declared as `aqevia_data:/data` in compose). The engine uses `AQEVIA_SQLITE_PATH` to locate the `storage.sqlite` file, which defaults to `/data/storage.sqlite`.
-- The only durable resource loaded on startup is `/data/storage.sqlite`; no other directories are written by the container because all UI assets, logs, and observability output are produced by the binary and streamed out.
-- Respect secure ownership of `/data` (the Dockerfile creates it and chowns to the `aqevia` user) to prevent unauthorized tampering. Early development builds may drop or reset `/data` when schema changes occur.
+- **Image/build settings**
+  - Base image: `rust:1.92.0-slim-trixie`
+  - Toolchain stages: `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo build --release --locked` inside `/app/src`
 
-## Operational commands
+- **Runtime filesystem**
+  - `WORKDIR /app` (both for build and runtime steps)
+  - `/usr/local/bin/aqevia-engine` (release binary)
+  - `/app/VERSION` (copied from the repo and made readable by `aqevia`)
+  - `VOLUME /data` (backed by compose volume `aqevia_data`)
 
-- **Inspect the volume contents**
+- **User/permissions**
+  - Dockerfile creates `aqevia` group/user (`groupadd -r aqevia && useradd --no-log-init -r -g aqevia aqevia`)
+  - `/data` and `/app/VERSION` are chowned to `aqevia:aqevia` so the non-root process can read/write needed files
 
-  ```bash
-  docker compose exec aqevia-engine ls -la /data
-  ```
+- **Network**
+  - Compose maps host port `7878` to container port `7878`
+  - The binary listens on `AQEVIA_OBSERVABILITY_ADDR` (default `0.0.0.0:7878`)
 
+- **Environment variables**
+  - `AQEVIA_SQLITE_PATH=/data/storage.sqlite` – keeps SQLite inside the durable named volume
+  - `AQEVIA_OBSERVABILITY_ADDR=0.0.0.0:7878` – control-plane/observability endpoint
+  - `PERSIST_FLUSH_INTERVAL_MS=1000` – flush cadence in milliseconds
+  - `PERSIST_BATCH_CAPACITY=10` – how many records trigger an immediate flush
+
+- **Entrypoint**
+  - `ENTRYPOINT ["aqevia-engine"]` – no extra args; the binary reads env vars and runs the engine loop
+
+## Operations
+
+- **Inspect logs**: `docker compose logs -f aqevia-engine`
+- **Inspect `/data`**: `docker compose exec aqevia-engine ls -la /data` or `docker run --rm -v aqevia_data:/data alpine ls /data`
 - **Backup the volume**
 
   ```bash
@@ -59,14 +66,20 @@ docker compose up --build
     sh -c 'cd /data && tar czf /backup/aqevia-data-$(date +%F).tgz .'
   ```
 
-- **Reset or wipe persistent state** *(development only)*  
+- **Reset/purge data** *(development only, data loss warning)*:
 
   ```bash
+  docker compose down
   docker volume rm aqevia_data
+  docker compose up --build
   ```
 
-  This removes every file under `/data`. Recreating the volume with `docker compose up` starts from a clean slate; use it only when you accept data loss.
+  Recreating the named volume starts with a clean slate; use this only if you accept wiping every persisted snapshot.
 
 ## Single-World constraint
 
-- The compose setup runs a single `aqevia-engine` replica; one container equals one World. To host additional Worlds, deploy separate containers so no Engine ever hosts multiple Worlds simultaneously.
+- One `aqevia-engine` container means one World. Deploy separate containers when you need multiple Worlds; never collapse them into a single Engine process.
+
+## Roadmap note
+
+- This dev workflow keeps the Rust toolchain and runtime image unified for simplicity and CI parity. When production readiness stabilizes, we will move to a multi-stage Dockerfile that builds with `rust:1.92.0-slim-trixie` but runs the release binary inside a stable Debian runtime image to ship only the necessary runtime dependencies.
