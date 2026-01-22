@@ -12,7 +12,7 @@ Aqevia is a Rust-first platform for creating and hosting text-based MUD **Worlds
 - `/docs/engine/builder-api.md` — Builder HTTP API contract (authoritative content mutations).
 - `/docs/engine/admin-api.md` — Admin HTTP API contract (world management and moderation).
 - `/docs/engine/observability-api.md` — health/metrics/status/log access conventions.
-- `/docs/engine/ai-api.md` — AI Assist HTTP endpoints (draft/proposal generation only).
+- `/docs/engine/ai-builder.md` — AI Assist HTTP endpoints (draft/proposal generation only).
 - `/docs/engine/ai-runtime.md` — runtime AI narrative assistant model (async jobs, streaming output, guardrails).
 - `/docs/engine/ai-providers.md` — AI Provider abstraction (local/cloud), secrets, timeouts, retries, streaming capability flags.
 - `/docs/aqevia-client.md` — Player UI design and interaction flows.
