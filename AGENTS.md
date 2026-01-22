@@ -83,6 +83,7 @@ Use these exact terms consistently across docs and code.
 
 ## Codex Operating Rules
 
+- **Assumptions:** do not make assumptions about application structure or intent. Clarify intent and update documentation
 - **Dependencies:** do not add crates/packages or upgrade toolchains unless explicitly instructed.
 - **Secrets:** never commit secrets, tokens, or private keys; use env vars/secret files and redact logs.
 - **Scope:** make small, reviewable changes; avoid broad refactors unless explicitly requested.
