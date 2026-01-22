@@ -1,6 +1,12 @@
 # HTTP Conventions
 Covers shared HTTP conventions such as authentication, error handling, pagination, idempotency, and rate limits used across the Router’s control-plane APIs.
 
+## Unified SPA routing
+
+- `/`, `/client/*`, `/builder/*`, and `/admin/*` all return the same SPA shell so the **Aqevia Web UI** can handle client-side routing. The Router never responds with a 404 for those paths as long as the SPA assets are deployed.
+- Role checks happen inside the SPA after it bootstraps the authenticated session; unauthorized users are redirected off restricted areas without needing separate hostnames or ports for Builder or Admin.
+- Static asset caching and any entrypoint rewrites required for SPA deep-links use the same rules as the rest of the control-plane traffic, keeping the hosting model consistent with other HTTP endpoints.
+
 ## JSON + caching defaults
 
 - Control-plane and observability endpoints always return `Content-Type: application/json`.

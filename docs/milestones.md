@@ -84,11 +84,11 @@ To keep work manageable, Milestone 3 is split into sequenced sub-deliverables th
 ## Milestone 4 — Embedded web UIs and shared API libraries
 
 ### Goals
-- Deliver the three web apps (Client/Builder/Admin) under `ui/`, share API/auth/type helpers (`ui/shared/...`), and serve built assets from the Engine process so a single deployment exposes all UIs per `/docs/aqevia-client.md`, `/docs/aqevia-builder.md`, `/docs/aqevia-admin.md`.
+- Deliver the **Aqevia Web UI** SPA with client, builder, and admin areas under `ui/`, share API/auth/type helpers (`ui/shared/...`), and serve the built SPA assets from the Engine process so a single deployment exposes all experiences per `/docs/aqevia-client.md`, `/docs/aqevia-builder.md`, `/docs/aqevia-admin.md`.
 - Provide shared API plumbing that honors `/docs/engine/protocol.md` and `/docs/engine/http-conventions.md` while keeping endpoint sets separated into `admin/`, `builder/`, and `client/`.
 
 ### Acceptance criteria
-- Each web UI builds (via Vite or similar) and the Engine serves the static assets at stable routes (`/client`, `/builder`, `/admin`).
+- The SPA builds (via Vite or similar) and the Engine serves the shared bundle while rewriting `/client`, `/builder`, and `/admin` into the same entrypoint so client-side routing resolves each role-gated area.
 - Shared API/auth/components under `ui/shared/` document the split responsibilities; `/docs/milestones.md` and `/docs/style.md` note that the shared API core contains transport/auth/error plumbing while each endpoint set is in its own subfolder.
 - Web UIs respect token constraints (no secrets in browser), connect to the Engine over WS/HTTP, and present the minimal gameplay/management flows described in `/docs/aqevia-client.md`, `/docs/aqevia-builder.md`, and `/docs/aqevia-admin.md`.
 
@@ -100,6 +100,6 @@ To keep work manageable, Milestone 3 is split into sequenced sub-deliverables th
 
 ### Acceptance criteria
 - All API/protocol docs under `/docs/engine/` match the implementation (confirmed by manual review or generated checks), and `docs/security.md`, `docs/testing.md`, and `docs/style.md` reflect the current behavior.
-- Container and native build paths produce a runnable Engine serving all three web UIs; `./scripts/test.sh` succeeds, and observability endpoints report health.
+- Container and native build paths produce a runnable Engine serving the Aqevia Web UI so `/client`, `/builder`, and `/admin` remain available from the same host; `./scripts/test.sh` succeeds, and observability endpoints report health.
 - AI Assist/Runtime behave per `/docs/engine/ai-builder.md` and `/docs/engine/ai-runtime.md` (drafts only, async runtime responses), and provider secrets remain server-side.
 - Tag and commit the release as `v1` (or equivalent) to mark final acceptance.
