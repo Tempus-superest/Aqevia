@@ -72,93 +72,113 @@ Aqevia uses a layered approach. Most behavior should be tested at the **lowest l
 ### 1) Unit tests
 
 Purpose:
+
 - Validate pure logic and invariants (parsing, validation rules, deterministic helpers).
 
 Characteristics:
+
 - Fast, deterministic, minimal IO.
 - Should run everywhere and always.
 
 ### 2) Component tests
 
 Purpose:
+
 - Validate a subsystem with real collaborators, but without full networking or containers.
 
 Examples:
+
 - Storage module behavior (SQLite schema/migrations, queries, transactions).
 - Config parsing/validation and “apply” semantics.
 - Dirty-tracking and bounded batch flush behavior (when introduced).
 
 Characteristics:
+
 - May use temporary directories, SQLite files, and real serialization formats.
 - Still fast and deterministic.
 
 ### 3) In-process HTTP tests (control-plane handler tests)
 
 Purpose:
+
 - Validate HTTP API contracts at the handler boundary without binding real sockets.
 
 Examples:
+
 - Auth requirements and role enforcement.
 - Status/health endpoints.
 - Input validation produces correct error codes and shapes.
 
 Characteristics:
+
 - No real TLS, no real network stack.
 - Focused on request/response semantics.
 
 ### 4) In-process WS tests (data-plane session wiring)
 
 Purpose:
+
 - Validate WebSocket session semantics without binding real sockets, when possible.
 
 Examples:
+
 - Message shape validation (reject invalid frames/messages).
 - Session lifecycle: connect → authenticate/identify (if applicable) → command → output.
 - Backpressure / buffering rules at the Router boundary.
 
 Characteristics:
+
 - Tests should validate the **Router ↔ Kernel** integration via the defined interfaces.
 - Avoid “fake” gameplay logic embedded in Transport tests; the Kernel remains authoritative.
 
 ### 5) Host-network integration tests (real sockets)
 
 Purpose:
+
 - Validate operator-visible network behavior on the host OS.
 
 Examples:
+
 - Control-plane HTTP server binds successfully on an ephemeral port.
 - WebSocket server accepts connections and enforces the documented session flow.
 - A simple command round-trip works via a real WS client.
 
 Characteristics:
+
 - Starts servers on **ephemeral ports**.
 - Must be written to avoid port conflicts and flakiness.
 
 ### 6) CLI integration tests (spawn the binary)
 
 Purpose:
+
 - Validate the CLI (if/when present) as a product surface.
 
 Examples:
+
 - `aqevia status` or equivalent health/diagnostic commands.
 - Exit codes, stdout/stderr content, and error messages.
 
 Characteristics:
+
 - Spawns the built binary and asserts observable behavior.
 - Uses temporary state directories and ephemeral ports.
 
 ### 7) Docker smoke / end-to-end tests
 
 Purpose:
+
 - Validate the container story (image build/run, volumes, ports, and basic workflows).
 
 Examples:
+
 - `docker compose up` brings the system healthy.
 - Health endpoint reachable.
 - Basic control-plane API reachability inside Docker.
 - Basic data-plane WebSocket connectivity and command round-trip inside Docker.
 
 Characteristics:
+
 - Slower and more environmental.
 - Typically run in CI as a dedicated job (not necessarily on every local `cargo test` run).
 - Must be deterministic and produce clear diagnostics.
@@ -170,13 +190,16 @@ If Docker smoke tests require small utilities (e.g., `curl`), keep them clearly 
 ### 8) Web UI contract tests
 
 Purpose:
+
 - Ensure the Web UI stays a **thin client** over the control-plane APIs.
 
 We prefer tests that validate:
+
 - The UI only uses documented `/api/...` endpoints.
 - UI pages render and basic workflows operate (minimal, stable automation).
 
 Characteristics:
+
 - May be “contract style” (ensuring expected API calls) or “smoke style” (page loads + a small workflow).
 - Browser-level testing is allowed when needed, but keep it minimal and stable.
 
