@@ -1,8 +1,18 @@
 #!/usr/bin/env sh
 set -eu
 
-# Run from repo root.
-cd "$(dirname "$0")/.."
+# Run from the workspace root (src).
+REPO_ROOT="$(cd "$(dirname "$0")/.."; pwd)"
+WORKSPACE_ROOT="$REPO_ROOT/src"
+
+if [ ! -d "$WORKSPACE_ROOT" ]; then
+  printf 'Workspace root %s not found\n' "$WORKSPACE_ROOT" >&2
+  exit 1
+fi
+
+cd "$WORKSPACE_ROOT"
+
+export CARGO_INCREMENTAL=0
 
 run_step() {
   printf '\n=== %s ===\n' "$1"
@@ -10,9 +20,9 @@ run_step() {
   "$@"
 }
 
-run_step "Running cargo fmt --check" cargo fmt --check
-run_step "Running cargo clippy --all-targets --all-features -D warnings" \
-  cargo clippy --all-targets --all-features -D warnings
-run_step "Running cargo test" cargo test
+run_step "Running cargo fmt --all -- --check" cargo fmt --all -- --check
+run_step "Running cargo clippy --all-targets --all-features -- -D warnings" \
+  cargo clippy --all-targets --all-features -- -D warnings
+run_step "Running cargo test --all" cargo test --all
 
 printf '\n=== All checks passed ===\n'

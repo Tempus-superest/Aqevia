@@ -1,0 +1,11 @@
+[package]
+name = "aqevia-engine-bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aqevia-engine = { path = "../../engine" }
+
+[[bin]]
+name = "aqevia-engine"
+path = "src/main.rs"
