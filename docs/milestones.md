@@ -4,10 +4,10 @@ This document breaks Aqevia into milestone deliverables. Each milestone includes
 
 ## Repository baseline
 
-- **Layout:** the workspace only contains docs (`/docs/`), placeholder `src/` + `ui/` folders with README stubs, `scripts/test.sh`, `VERSION` + versioning helpers, `ui/shared/...` scaffolds, and the top-level docs referenced by `/AGENTS.md`.
-- **Build/test entry points:** there is no `Cargo.toml` or UI package yet, so `cargo`/`npm` commands cannot succeed; the only runnable automation is `./scripts/test.sh`, which today prints banners and fails fast when it cannot find a manifest. Format/lint is governed by `.editorconfig`, and `docs/testing.md` now points teams to the script as the canonical sequence (fmt → clippy → test).
-- **Docs coverage:** every `/docs/*` contract listed in `/AGENTS.md` exists as a written file. `/docs/milestones.md` is the sole milestone tracker, and `/docs/style.md`, `/docs/testing.md`, `/docs/versioning.md`, `/docs/security.md`, etc., describe the architecture, contracts, and QA expectations.
-- **Current implementation gaps:** no Rust workspace, no HTTP/WS server, no SQLite storage, and no packaged web UIs exist yet, so the repo must first establish foundational crates and UI packages before any of the core rules (1 World = 1 deployment unit, Kernel ↔ Router ↔ Transports boundaries, modular storage, AI plumbing) can be enforced in code.
+- **Layout:** the workspace contains docs (`/docs/`), the Rust engine workspace under `src/`, storage crates (`aqevia-storage` / `aqevia-storage-sqlite`), empty `ui/` folders, `scripts/test.sh`, `VERSION`, and the docs referenced by `/AGENTS.md`.
+- **Build/test entry points:** `./scripts/test.sh` now executes from `src/`, running `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all` against the workspace. `.editorconfig`, `docs/testing.md`, and `docs/style.md` describe these commands as the canonical automation path.
+- **Docs coverage:** every `/docs/*` contract listed in `/AGENTS.md` exists. `docs/database.md` now documents the SQLite schema and flush cadence, `docs/engine/observability-api.md` spells out `/health`, `/ready`, and `/status`, and `docs/engine/http-conventions.md` and `docs/security.md` explain the resulting behavior.
+- **Current implementation gaps:** HTTP control-plane handlers, WS data-plane logic, and packaged UIs are still pending; the repo must now layer on storage-backed observability before implementing actual gameplay/API contracts while continuing to honor “1 World = 1 deployment unit,” Kernel/Router/Transport boundaries, modular storage, and AI guardrails.
 
 ## Milestone 0 — Scaffolding foundation and doc compliance
 
@@ -40,9 +40,9 @@ This document breaks Aqevia into milestone deliverables. Each milestone includes
 - Provide minimal observability (health/status) HTTP handlers so the `/docs/engine/observability-api.md` contract becomes real and monitorable.
 
 ### Acceptance criteria
-- The Engine starts with a real SQLite schema from `/docs/database.md`, tracks dirty state, flushes in bounded batches, and expresses `PERSIST_FLUSH_INTERVAL_MS` (or similar) configuration.
-- Observability endpoints (`/health`, `/ready`, `/status`, etc.) exist, return documented shapes, and can be exercised via curl/httpie, matching `/docs/engine/observability-api.md`.
-- Storage module is isolated per the modular-storage rule; new backends add modules rather than rewriting core logic.
+- The Engine builds the `aqevia-storage` controller + `aqevia-storage-sqlite` backend, runs stone migrations (`schema_meta`, `world_records`), buffers dirty records, and exposes `PERSIST_FLUSH_INTERVAL_MS`/`PERSIST_BATCH_CAPACITY` settings for the flush cadence documented in `/docs/database.md`.
+- Observability endpoints (`/health`, `/ready`, `/status`) exist inside the transport layer, honor `/docs/engine/http-conventions.md`, and return the documented JSON shapes that include version, uptime, storage backend, and flush stats.
+- Storage and observability code lives in dedicated crates and modules so future backends and transports can swap in while the Engine remains the only piece deciding when to persist state.
 
 ## Milestone 3 — Control plane and data plane contracts
 

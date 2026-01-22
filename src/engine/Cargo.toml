@@ -1,9 +1,10 @@
 [package]
 name = "aqevia-engine"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 aqevia-kernel = { path = "../kernel" }
 aqevia-router = { path = "../router" }
 aqevia-transport = { path = "../transport" }
+aqevia-storage = { path = "../storage" }

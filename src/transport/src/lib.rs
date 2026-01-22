@@ -1,6 +1,10 @@
 //! Transport crate: responsible for WebSocket/HTTP plumbing without touching gameplay logic.
 
+pub mod observability;
+
 use aqevia_router::Router;
+
+pub use observability::{ObservabilityServer, ObservabilityState};
 
 pub struct Transport {
     router: Router,
@@ -19,6 +23,11 @@ impl Transport {
             payload,
             self.router.world_context()
         )
+    }
+
+    /// Retrieve the world id from the router context.
+    pub fn world_id(&self) -> &'static str {
+        self.router.world_context()
     }
 }
 

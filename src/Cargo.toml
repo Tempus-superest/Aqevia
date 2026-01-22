@@ -6,4 +6,6 @@ members = [
   "transport",
   "engine",
   "bin/aqevia-engine",
+  "storage",
+  "storage-sqlite",
 ]

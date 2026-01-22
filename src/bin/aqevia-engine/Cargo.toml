@@ -1,10 +1,13 @@
 [package]
 name = "aqevia-engine-bin"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 aqevia-engine = { path = "../../engine" }
+aqevia-storage = { path = "../../storage" }
+aqevia-storage-sqlite = { path = "../../storage-sqlite" }
+aqevia-transport = { path = "../../transport" }
 
 [[bin]]
 name = "aqevia-engine"

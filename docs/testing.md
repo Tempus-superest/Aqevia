@@ -33,6 +33,14 @@ Use `./scripts/test.sh` as the canonical local command; it runs the commands lis
 
 If/when the Web UI gains automated tests, add the corresponding command here (e.g., `npm test` / `pnpm test` in the UI directory) and ensure it runs offline.
 
+## Storage and observability tests
+
+- `aqevia-storage` exposes deterministic unit tests that verify dirty batching, flush cadence, and migration awareness. These tests mostly run in-memory or against a temporary SQLite file (`target/` is excluded via `.gitignore`), so they remain offline and fast.
+- `aqevia-storage-sqlite` tests confirm migrations create `schema_meta`/`world_records`, and `StorageController` flushes data only when capacity or time demands it.
+- `aqevia-transport` contains observability endpoint tests that spin up the in-process HTTP listener and hit `/health`, `/ready`, and `/status` via a raw `TcpStream`.
+
+When running `./scripts/test.sh`, the storage and observability suites execute as part of `cargo test --all`.
+
 ## Engine boundary guardrails (Kernel / Router / Transport)
 
 Aqevia’s architecture has hard boundaries:

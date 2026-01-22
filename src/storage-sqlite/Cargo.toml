@@ -1,0 +1,8 @@
+[package]
+name = "aqevia-storage-sqlite"
+version = "0.2.0"
+edition = "2021"
+
+[dependencies]
+aqevia-storage = { path = "../storage" }
+rusqlite = { version = "0.30", features = ["bundled"] }
