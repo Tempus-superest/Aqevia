@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+set -eu
+
+cd "$(dirname "$0")/.."
+
+VERSION_FILE="VERSION"
+LOCATIONS_FILE="scripts/version-locations.yml"
+
+error_exit() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+if [ ! -f "$VERSION_FILE" ]; then
+  error_exit "Missing $VERSION_FILE"
+fi
+
+version=$(sed -n '1p' "$VERSION_FILE" | tr -d '[:space:]')
+
+if [ -z "$version" ]; then
+  error_exit "Version file is empty"
+fi
+
+if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  error_exit "Invalid version format in $VERSION_FILE (expected MAJOR.MINOR.PATCH)"
+fi
+
+if [ ! -f "$LOCATIONS_FILE" ]; then
+  error_exit "Missing $LOCATIONS_FILE"
+fi
+
+target_paths=$(sed -n 's/^[[:space:]]*- path:[[:space:]]*//p' "$LOCATIONS_FILE")
+target_count=0
+
+if [ -n "$target_paths" ]; then
+  while IFS= read -r target; do
+    if [ -z "$target" ]; then
+      continue
+    fi
+    target_count=$((target_count + 1))
+    printf 'Found registered target: %s (verification deferred)\n' "$target"
+  done <<EOF
+$target_paths
+EOF
+fi
+
+if [ "$target_count" -eq 0 ]; then
+  printf 'Version %s has no registered targets to verify.\n' "$version"
+else
+  printf 'Version %s is registered across %s target(s); no verification rules are available yet.\n' "$version" "$target_count"
+fi
