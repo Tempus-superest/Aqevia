@@ -4,7 +4,7 @@
 
 ## References (/docs)
 
-- `/docs/architecture.md` — end-to-end system layout and boundaries.
+- `/docs/spec.md` — end-to-end system architechture, layout and boundaries.
 - `/docs/aqevia-engine.md` — Server runtime design and boundaries.
 - `/docs/engine/protocol.md` — entrypoint for Engine contracts (WS data plane, HTTP control plane, AI integration, observability).
 - `/docs/engine/ws-session.md` — WebSocket gameplay session protocol.
