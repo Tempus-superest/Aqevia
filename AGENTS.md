@@ -55,6 +55,7 @@ Use these exact terms consistently across docs and code.
 
 ## Core Rules
 
+- **Development data is disposable.** Do not add migrations or retention logic. Each build initializes from scratch.
 - **1 World = 1 deployment unit.** One Aqevia Engine (native process or container) runs exactly one **World** and serves the embedded Aqevia Client/Builder/Admin for that World.
 - **Single-origin Web UI.** The Engine serves one unified SPA for the World at `/` with area routes `/admin/*`, `/builder/*`, `/client/*`; never serve Admin/Builder/Client on separate ports or hostnames.
 - **No multi-world.** A single Engine process/container must never host more than one World.
