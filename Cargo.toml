@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+  "src/kernel",
+  "src/router",
+  "src/transport",
+  "src/engine",
+  "src/bin/aqevia-engine",
+  "src/storage",
+  "src/storage-sqlite",
+]

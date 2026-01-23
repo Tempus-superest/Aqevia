@@ -13,6 +13,7 @@ run_step() {
 }
 
 run_step "Checking version sync" ./scripts/check-version-sync
+run_step "Running cargo metadata --no-deps" cargo metadata --no-deps
 
 if [ ! -d "$WORKSPACE_ROOT" ]; then
   printf 'Workspace root %s not found\n' "$WORKSPACE_ROOT" >&2
