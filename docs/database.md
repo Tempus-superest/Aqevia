@@ -4,8 +4,18 @@ Describes the persistence model, schema conventions, and schema bootstrap practi
 
 ## Modular storage interface
 
-- `aqevia-storage` defines the `StorageBackend` trait, `WorldRecord`, and `StorageController` that every implementation must follow. The Engine owns **when** to persist (flush scheduling and shutdown hooks), and each backend owns **how** (schema and queries).
-- Backends must expose `init`, `persist_batch`, and stats so the Engine can drive dirty tracking, bounded batches, and observability updates while keeping authoritative state in memory. The default `StorageController` orchestrates flush cadence based on `StorageConfig` (flush interval + batch capacity).
+- `aqevia-storage` defines a `StorageBackend` trait with the following responsibilities:
+  - `init(&mut self)` – initialize the schema and schema metadata (`schema_meta`) before the Engine starts issuing records.
+  - `persist_batch(&mut self, batch: &[WorldRecord])` – atomically commit the provided batch of `WorldRecord` snapshots in a transaction that includes payload, world identifier, and timestamp.
+  - `stats(&self)` – expose flush statistics so observability can report durability health.
+  - `backend_name(&self)` – return a short identifier (e.g., `sqlite`) used in observability snapshots.
+  - `WorldRecord` encapsulates the authoritative snapshot payload, world ID, and timestamp emitted by the Kernel; the backend serializes/stores these blobs, while the Engine marks them dirty and decides when to flush them.
+- `StorageController` (default implementation in `aqevia-storage`) encapsulates dirty-tracking, batching, and flush orchestration:
+  - It buffers incoming `WorldRecord` entries, marks them dirty, and triggers a flush when the `StorageConfig` thresholds are met.
+  - `StorageConfig` includes `flush_interval_ms` and `batch_capacity`, which the Engine tunes per workload while the backend remains responsible for transactional guarantees.
+  - Flush stats include `flush_count`, `last_flush`, `batch_size`, and the most recent `flush_error` (if any). These stats are published to observability so operators can understand persistence cadence and failures.
+- Dirty tracking follows the rule “Engine decides *when* to flush, storage decides *how* to flush safely.” The Engine schedules flushes based on `StorageConfig` timers/capacities and `StorageController` enqueues the records, while each `StorageBackend` implements the durable transaction semantics and error handling.
+- Early development uses a reset-on-mismatch posture: the backend compares the stored schema version in `schema_meta` to the compiled `SCHEMA_VERSION`, and if they differ it drops/recreates the schema so no upgrade path is attempted yet.
 
 ## SQLite backend (initial implementation)
 

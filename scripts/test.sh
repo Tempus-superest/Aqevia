@@ -2,6 +2,10 @@
 set -eu
 set -o pipefail
 
+# Workaround: some filesystems cannot lock incremental build directories.
+# Always disable incremental builds so test runs stay deterministic.
+export CARGO_INCREMENTAL=0
+
 # Run from the workspace root (src).
 REPO_ROOT="$(cd "$(dirname "$0")/.."; pwd)"
 WORKSPACE_ROOT="$REPO_ROOT/src"
