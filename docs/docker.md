@@ -1,85 +1,70 @@
-# Docker deployment
+# Docker
 
-## Overview
-- Each `aqevia-engine` container hosts exactly one **World**; the Compose stack purposely keeps a single service so there are never multiple Worlds inside one Engine instance.
-- The dev image is built from `rust:1.92.0-slim-trixie`, so the toolchain and binary live together in one image (the binary stays at `/usr/local/bin/aqevia-engine` and `/app/VERSION` is embedded there as metadata). Mutable state is isolated inside `/data`, which is backed by the named volume `aqevia_data`.
-- Persistence survives container restarts but is not guaranteed to be upgrade-compatible during the pre‑1.0 phase; if schema changes break compatibility, wiping `aqevia_data` is the supported recovery path. Production releases will later switch to a stable Debian runtime image (multi-stage) so only vetted runtime dependencies ship with the binary.
+This document describes Backlit's Docker environment, including the Dockerfile build pipeline, the Compose configuration, runtime defaults, and the supported smoke-test workflow.
 
-## Build
+## Image build (Dockerfile)
+
+Backlit ships a multi-stage Dockerfile that compiles both the Rust binary and the Web UI assets before assembling a slim runtime image. The builder stage uses the `rustlang/rust:nightly` base image, installs Rust build dependencies plus Node/NPM for the UI build, installs UI dependencies, builds the UI, and then builds the `backlit` release binary. The final runtime stage uses `debian:stable-slim` and copies the built binary into `/usr/bin/backlit`.【F:Dockerfile†L1-L33】
+
+Key details from the Dockerfile:
+
+- **Builder stage**: installs `build-essential`, `pkg-config`, `libssl-dev`, `nodejs`, `npm`, and `cmake` for compiling Rust and UI assets; runs `npm install` and `npm run build` in `ui/`, then `cargo build --release --bin backlit`.【F:Dockerfile†L1-L21】
+- **Runtime stage**: installs minimal tooling (`ca-certificates`, `curl`, `iproute2`, `dnsutils`) to support smoke tests and container diagnostics; these tools are explicitly noted as dev/test helpers and not required for runtime correctness.【F:Dockerfile†L23-L33】
+- **Runtime user**: creates a non-root `backlit` user and sets `/opt/backlit` as the working directory, owned by that user.【F:Dockerfile†L30-L33】
+- **Entrypoint**: runs `backlit serve --data-dir /opt/backlit` as the default command.【F:Dockerfile†L33-L41】
+- **Exposed ports**: 80 (HTTP), 443 (HTTPS), and 9090 (admin API).【F:Dockerfile†L37-L38】
+
+## Docker Compose configuration
+
+The repository includes a `docker-compose.yml` that builds the local Dockerfile, tags the resulting image with the Backlit semantic version, and exposes the public and admin listeners. It also mounts a persistent volume for `/opt/backlit` so the SQLite state database and secrets material survive container restarts.【F:docker-compose.yml†L1-L19】
+
+Key details from the Compose file:
+
+- **Service name**: `backlit` (single container).【F:docker-compose.yml†L1-L4】
+- **Image tag**: `backlit:v0.6.22`, keeping the container image aligned with the crate version and release artifacts.【F:docker-compose.yml†L3-L4】
+- **Port mappings**:
+  - `80:80` (public HTTP)
+  - `443:443` (public HTTPS)
+  - `127.0.0.1:9090:9090` (admin API bound to loopback on the host).【F:docker-compose.yml†L5-L9】
+- **Volume**: `backlit-data:/opt/backlit` for persistent state and secrets artifacts.【F:docker-compose.yml†L10-L12】
+- **Restart policy**: `unless-stopped`.【F:docker-compose.yml†L12-L13】
+- **Environment defaults**:
+  - `RUST_LOG=info`
+  - `RUST_BACKTRACE=1`【F:docker-compose.yml†L13-L16】
+- **Optional DNS override**: commented-out `dns:` section for testing against specific resolvers.【F:docker-compose.yml†L16-L20】
+
+## Runtime defaults and persistence
+
+- **Data directory**: the image runs `backlit serve --data-dir /opt/backlit`, so all state is rooted at `/opt/backlit` inside the container by default.【F:Dockerfile†L33-L41】
+- **Persistent storage**: the Compose stack binds the `backlit-data` volume to `/opt/backlit`, preserving the SQLite database and any secrets material across restarts and rebuilds.【F:docker-compose.yml†L10-L12】
+- **Non-root runtime**: the container runs as the `backlit` user to avoid root-level execution in production deployments.【F:Dockerfile†L30-L39】
+
+## Logging and diagnostics
+
+Backlit emits logs to stdout/stderr, so container logs are available via `docker logs` without file logging. The runtime image also includes a small set of utilities (`curl`, `ss` via `iproute2`, DNS tools) to support debugging and smoke tests. These tools are explicitly marked as dev/test helpers and not part of runtime correctness, so they may be removed or split into a dev-only image in the future.【F:Dockerfile†L23-L33】
+
+## Smoke testing in Docker
+
+Backlit provides an end-to-end Docker smoke test script that brings up the Compose stack, captures the bootstrap admin password from container logs, provisions a proxy site via the Admin API, and verifies routing through the public listener. The script also starts a temporary upstream container on the Compose network and asserts that requests routed through Backlit reach that upstream. The script cleans up the Compose stack and test upstream container on exit.【F:scripts/smoke_docker_proxy.sh†L1-L105】【F:scripts/smoke_docker_proxy.sh†L106-L176】
+
+You can run the smoke test via Make:
 
 ```bash
-docker build -t aqevia-engine:dev .
+make smoke
 ```
 
-- The Dockerfile is single-stage for dev parity: it uses `rust:1.92.0-slim-trixie`, installs `ca-certificates`, and runs `cargo fmt`, `cargo clippy`, and `cargo build --release --locked` under `/app/src`, keeping compilation and runtime dependencies in the same image.
-- The release binary is copied into `/usr/local/bin/aqevia-engine` inside that same image, so the container can run immediately after a successful build.
+The `make smoke` target is defined in the repo Makefile and points to `scripts/smoke_docker_proxy.sh`, keeping the Docker smoke workflow discoverable and consistent with the testing documentation.【F:Makefile†L9-L15】
 
-## Run with Docker Compose
+## Operator workflow (Compose)
+
+To run Backlit locally with Docker Compose:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-- Compose runs the `aqevia-engine` container as the non-root `aqevia` user, publishes port `7878`, and mounts the named volume `aqevia_data:/data` so `AQEVIA_SQLITE_PATH` can point to `/data/storage.sqlite` without writing into the container layer.
-- The environment variables in compose match the Dockerfile defaults so the observability listener and persistence flush tuning behave identically inside the container.
+This publishes the admin listener on `127.0.0.1:9090`, while HTTP/HTTPS remain exposed on `0.0.0.0:80` and `0.0.0.0:443`. A named volume (`backlit-data`) keeps `/opt/backlit` persisted for state and secrets. Diagnostics can be performed with `docker exec backlit ss -lntp` to confirm listeners and `docker logs backlit` for runtime logs.【F:README.md†L165-L178】【F:docker-compose.yml†L5-L12】
 
-## Configuration
+## References
 
-- **Image/build settings**
-  - Base image: `rust:1.92.0-slim-trixie`
-  - Toolchain stages: `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo build --release --locked` inside `/app/src`
-
-- **Runtime filesystem**
-  - `WORKDIR /app` (both for build and runtime steps)
-  - `/usr/local/bin/aqevia-engine` (release binary)
-  - `/app/VERSION` (copied from the repo and made readable by `aqevia`)
-  - `VOLUME /data` (backed by compose volume `aqevia_data`)
-
-- **User/permissions**
-  - Dockerfile creates `aqevia` group/user (`groupadd -r aqevia && useradd --no-log-init -r -g aqevia aqevia`)
-  - `/data` and `/app/VERSION` are chowned to `aqevia:aqevia` so the non-root process can read/write needed files
-
-- **Network**
-  - Compose maps host port `7878` to container port `7878`
-  - The binary listens on `AQEVIA_OBSERVABILITY_ADDR` (default `0.0.0.0:7878`)
-
-- **Environment variables**
-  - `AQEVIA_SQLITE_PATH=/data/storage.sqlite` – keeps SQLite inside the durable named volume
-  - `AQEVIA_OBSERVABILITY_ADDR=0.0.0.0:7878` – control-plane/observability endpoint
-  - `PERSIST_FLUSH_INTERVAL_MS=1000` – flush cadence in milliseconds
-  - `PERSIST_BATCH_CAPACITY=10` – how many records trigger an immediate flush
-
-- **Entrypoint**
-  - `ENTRYPOINT ["aqevia-engine"]` – no extra args; the binary reads env vars and runs the engine loop
-
-## Operations
-
-- **Inspect logs**: `docker compose logs -f aqevia-engine`
-- **Inspect `/data`**: `docker compose exec aqevia-engine ls -la /data` or `docker run --rm -v aqevia_data:/data alpine ls /data`
-- **Backup the volume**
-
-  ```bash
-  docker run --rm \
-    -v aqevia_data:/data \
-    -v "$(pwd)/backups":/backup \
-    alpine \
-    sh -c 'cd /data && tar czf /backup/aqevia-data-$(date +%F).tgz .'
-  ```
-
-- **Reset/purge data** *(development only, data loss warning)*:
-
-  ```bash
-  docker compose down
-  docker volume rm aqevia_data
-  docker compose up --build
-  ```
-
-  Recreating the named volume starts with a clean slate; use this only if you accept wiping every persisted snapshot.
-
-## Single-World constraint
-
-- One `aqevia-engine` container means one World. Deploy separate containers when you need multiple Worlds; never collapse them into a single Engine process.
-
-## Roadmap note
-
-- This dev workflow keeps the Rust toolchain and runtime image unified for simplicity and CI parity. When production readiness stabilizes, we will move to a multi-stage Dockerfile that builds with `rust:1.92.0-slim-trixie` but runs the release binary inside a stable Debian runtime image to ship only the necessary runtime dependencies.
+- Docker smoke test expectations and tooling are outlined in the testing documentation, including the rationale for bundling `curl`/`ss` inside the image for end-to-end checks.【F:docs/testing.md†L111-L152】
