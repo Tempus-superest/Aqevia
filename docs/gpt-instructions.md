@@ -19,7 +19,7 @@ Theorycraft with the user, including “what if” alternatives. Then converge o
 
 ### Local Prompts
 
-Use **Local Prompts** only for narrow, locally verifiable work (single-file edits, small refactors, targeted bug fixes, doc updates). Start the prompt with `MODE: LOCAL` on the first line. Local prompts MUST: (1) name the files to change, (2) state the goal and non-goals, (3) list step-by-step edits, (4) include acceptance criteria, and (5) include local verification commands or a manual checklist. Use many small prompts. Do not write one large prompt when the work can be split. Before writing the prompt, define current behavior, desired outcome, the smallest change that achieves it, and how you will prove it locally.
+Use **Local Prompts** only for narrow, locally verifiable work (single-file edits, small refactors, targeted bug fixes, doc updates). State `MODE: LOCAL` in chat above the prompt. Local prompts MUST: (1) name the files to change, (2) state the goal and non-goals, (3) list step-by-step edits, (4) include acceptance criteria, and (5) include local verification commands or a manual checklist. Use many small prompts. Do not write one large prompt when the work can be split. Before writing the prompt, define current behavior, desired outcome, the smallest change that achieves it, and how you will prove it locally.
 
 ### Cloud Prompts
 
@@ -29,10 +29,9 @@ Use **Cloud Prompts** when the work is broader than a small local edit—multi-f
 
 - **Local-First Strategy**: Prefer **Local Prompts** before **Cloud Prompts**.
 - **Iterative Decomposition**: Break **Cloud Prompts** or **Local Prompts** into smaller local, cloud, or mixed prompts; iterate in small, testable steps.
-- **Mode Declaration**: Start every Codex prompt with `MODE: LOCAL` or `MODE: CLOUD` on the first line.
-- **Feedback-Gated Sequencing**: Do not write the next prompt until you receive (1) Codex output and (2) a user summary of what happened.
-- **Output-Strict Codex Blocks**: For any code-changing prompt, provide exactly two Markdown fenced code blocks: (1) the Codex prompt block (Codex-only text), and (2) the title/message block (title/message only). Put all guidance outside both code blocks.
-- **Versioned Title/Message**: Every PR title and every commit message MUST include the version and follow this exact format: `vX.Y.Z - <title>`.
+- **Mode Declaration**: State `MODE: LOCAL` or `MODE: CLOUD` in chat above the prompt. Do not include mode text inside code blocks.
+- **Output-Strict Codex Blocks**: For code changes, provide two fenced blocks: (1) Codex prompt text only, (2) raw title/message only. Put all labels and guidance in chat outside blocks.
+- **Title/Message**: In chat, state whether you are providing a PR title or commit message. In the second code block, output only `vX.Y.Z - <title>`.
 
 ---
 
