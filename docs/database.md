@@ -43,9 +43,18 @@ Describes the persistence model, schema conventions, and schema bootstrap practi
 
 ## Dirty tracking and flush policy
 
-- The Engine records `WorldRecord` entries whenever it drills state updates. `StorageController` buffers those entries and flushes only when the batch capacity is reached or the configured interval elapses, preventing constant full-state writes.
-- Flushing is also triggered during shutdown so that any lingering records reach durable storage before the process exits.
-- Flush statistics (`flush_count`, `last_flush`) feed observability so operators can track persistence behavior.
+- **Dirty records** are the `WorldRecord` entries that the Kernel emits but the StorageController has not yet flushed to durable storage. Every record is marked dirty when it is enqueued, and `StorageController` buffers them until a flush event occurs.
+- **Flush configuration**:
+  - `PERSIST_FLUSH_INTERVAL_MS` (default `1000` ms) controls the timer that wakes the controller to flush even if the batch is not full; a shorter interval favors durability at the cost of more frequent disk work, while longer intervals group writes for throughput.
+  - `PERSIST_BATCH_CAPACITY` (default `10`) caps how many dirty records a single flush can persist; when the queue grows faster than the flush cadence, additional flush cycles continue draining the backlog until caught up.
+  - The Engine owns the cadence (when timers fire or capacity is reached), while the backend owns how the records are written in a transaction.
+- **Batch formation and sustained pressure**:
+  - When either interval or capacity triggers, StorageController issues `persist_batch` with up to `PERSIST_BATCH_CAPACITY` records; batches are processed sequentially so ordering is preserved per flush batch.
+  - If write pressure remains high, multiple flush cycles run back-to-back, each draining another batch until the dirty queue is empty; flush stats (`flush_count`, `batch_size`, `last_flush`, `last_flush_error`) reveal how often and how much data is being persisted.
+- **Shutdown expectations**:
+  - Clean shutdown attempts a final flush before exiting, giving StorageBackend a best-effort chance to commit remaining dirty records and report via `flush_error` if it fails.
+  - Abrupt shutdown (killed process or crashes) can lose dirty records because the backend only persists what its latest flush completed; this aligns with the dev posture that data is disposable and boots start from scratch after restarts.
+  - Observability surfaces read these stats so operators can monitor whether dirty records were drained before shutdown or if errors need attention.
 
 ## Configuration and environment
 

@@ -39,6 +39,13 @@ If/when the Web UI gains automated tests, add the corresponding command here (e.
 - `aqevia-storage-sqlite` tests confirm migrations create `schema_meta`/`world_records`, and `StorageController` flushes data only when capacity or time demands it.
 - `aqevia-transport` contains observability endpoint tests that spin up the in-process HTTP listener and hit `/health`, `/ready`, and `/status` via a raw `TcpStream`.
 
+### Storage persistence tests
+
+- Validate batching honors `PERSIST_BATCH_CAPACITY` (each flush inserts at most that many `WorldRecord` entries) and the dirty queue drains after successive flush cycles.
+- Confirm `PERSIST_FLUSH_INTERVAL_MS` triggers flushes when dirty records remain, so the controller eventually drains even if the batch capacity is not reached.
+- Ensure dirty state resets after a successful flush and that `last_flush_error`/`flush_error` statistics capture failures without corrupting schema metadata.
+- `aqevia-storage` tests focus on the controller logic (dirty queue, timer/capacity triggers); `aqevia-storage-sqlite` exercises `persist_batch`, stats emission, and the reset-on-schema-mismatch behavior described elsewhere.
+
 When running `./scripts/test.sh`, the storage and observability suites execute as part of `cargo test --all`.
 
 ## Engine boundary guardrails (Kernel / Router / Transport)
