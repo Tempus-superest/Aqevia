@@ -1,1 +1,3 @@
-targets: []
+targets:
+  - path: VERSION
+    description: Primary version source for Aqevia releases.

@@ -29,16 +29,27 @@ if [ ! -f "$LOCATIONS_FILE" ]; then
   error_exit "Missing $LOCATIONS_FILE"
 fi
 
-target_paths=$(sed -n 's/^[[:space:]]*- path:[[:space:]]*//p' "$LOCATIONS_FILE")
+target_paths=''
+if ! target_paths=$(grep -E '^[[:space:]]*- path:' "$LOCATIONS_FILE" | sed -E 's/^[[:space:]]*- path:[[:space:]]*//'); then
+  target_paths=''
+fi
 target_count=0
 
 if [ -n "$target_paths" ]; then
   while IFS= read -r target; do
+    target=$(printf '%s' "$target" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ -z "$target" ]; then
       continue
     fi
     target_count=$((target_count + 1))
-    printf 'Found registered target: %s (verification deferred)\n' "$target"
+    if [ ! -f "$target" ]; then
+      error_exit "Registered target not found: $target"
+    fi
+    target_version=$(sed -n '1p' "$target" | tr -d '[:space:]')
+    if [ "$target_version" != "$version" ]; then
+      error_exit "Version mismatch in $target (expected $version, found $target_version)"
+    fi
+    printf 'Verified %s contains version %s\n' "$target" "$version"
   done <<EOF
 $target_paths
 EOF
@@ -47,5 +58,5 @@ fi
 if [ "$target_count" -eq 0 ]; then
   printf 'Version %s has no registered targets to verify.\n' "$version"
 else
-  printf 'Version %s is registered across %s target(s); no verification rules are available yet.\n' "$version" "$target_count"
+  printf 'Version %s matches %s registered target(s).\n' "$version" "$target_count"
 fi
