@@ -23,5 +23,7 @@ Describes the persistence model, schema conventions, and schema bootstrap practi
 
 ## Configuration and environment
 
-- The SQLite database file path is configurable via `AQEVIA_SQLITE_PATH` (defaults to `storage.sqlite` in the repo root). Keep the directory owned by the Aqevia process so no other user can tamper with durable state.
-- Flush cadence is driven by `PERSIST_FLUSH_INTERVAL_MS` (default `1000`) and `PERSIST_BATCH_CAPACITY` (default `10`). Tune these values per workload to balance durability vs. throughput.
+- `AQEVIA_SQLITE_PATH` chooses the durable store location (default `storage.sqlite` in the repo root, or `/data/storage.sqlite` inside the Docker container). Keep the directory owned by the Aqevia process so data cannot be tampered with outside the Engine.
+- `PERSIST_FLUSH_INTERVAL_MS` controls how often the Engine attempts to flush dirty records (default `1000` milliseconds). Raising it groups more writes per flush but delays durability; lowering it makes persistence more aggressive.
+- `PERSIST_BATCH_CAPACITY` limits how many records the Engine accumulates before flushing (default `10`). Bump it for throughput-heavy workloads or lower it when you need tighter durability windows.
+- Development data is disposable: schema mismatches drop/recreate the SQLite tables, so no upgrade path exists yet. Flush settings and file locations are configured via the env vars above so new deployments can initialize from scratch predictably.

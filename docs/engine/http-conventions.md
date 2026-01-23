@@ -18,3 +18,8 @@ Covers shared HTTP conventions such as authentication, error handling, paginatio
 - `/health` always returns `200 OK` with `{"status":"ok"}`.
 - `/ready` returns `200 OK` once storage has initialized, and `503 Service Unavailable` with `{"status":"initializing"}` prior to readiness.
 - `/status` returns `200 OK` containing version, uptime, storage_backend, flush statistics, and any stored error state in JSON. A missing metric should be represented by `null`.
+
+## Runtime configuration defaults
+
+- `AQEVIA_OBSERVABILITY_ADDR` determines where the Engine binds `/health`, `/ready`, and `/status`. The default `0.0.0.0:7878` aligns with the Docker stack, but operators may scope it to `127.0.0.1:7878` for tighter security; in either case the Router only serves those endpoints after the Kernel and Router have bootstrapped.
+- The observability listener is documented in [`docs/docker.md`](docs/docker.md) because container deployments often rewrite the HTTP host/port; keep the binding inside the single-World process and do not expose it publicly without a trusted proxy.

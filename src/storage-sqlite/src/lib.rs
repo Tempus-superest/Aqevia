@@ -8,7 +8,9 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use aqevia_storage::{StorageBackend, StorageError, StorageResult, StorageStats, WorldRecord};
-use rusqlite::{params, Connection, Error as RusqliteError};
+use rusqlite::{params, Connection, Error as RusqliteError, OptionalExtension};
+
+const SCHEMA_VERSION: i64 = 1;
 
 fn to_storage_error(err: RusqliteError) -> StorageError {
     StorageError(err.to_string())
@@ -52,19 +54,52 @@ impl SqliteStorage {
             .map_err(to_storage_error)?;
         Ok(())
     }
+
+    fn reset_schema(&self) -> StorageResult<()> {
+        self.connection
+            .execute_batch(
+                "
+            DROP TABLE IF EXISTS schema_meta;
+            DROP TABLE IF EXISTS world_records;
+        ",
+            )
+            .map_err(to_storage_error)?;
+        self.run_migrations()?;
+        Ok(())
+    }
 }
 
 impl StorageBackend for SqliteStorage {
     fn init(&mut self) -> StorageResult<()> {
         self.run_migrations()?;
-        let count: i64 = self
+        let version: Option<i64> = self
             .connection
-            .query_row("SELECT COUNT(*) FROM schema_meta", [], |row| row.get(0))
+            .query_row(
+                "SELECT version FROM schema_meta ORDER BY id DESC LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()
             .map_err(to_storage_error)?;
-        if count == 0 {
-            self.connection
-                .execute("INSERT INTO schema_meta (version) VALUES (1)", params![])
-                .map_err(to_storage_error)?;
+        match version {
+            None => {
+                self.connection
+                    .execute(
+                        "INSERT INTO schema_meta (version) VALUES (?1)",
+                        params![SCHEMA_VERSION],
+                    )
+                    .map_err(to_storage_error)?;
+            }
+            Some(v) if v != SCHEMA_VERSION => {
+                self.reset_schema()?;
+                self.connection
+                    .execute(
+                        "INSERT INTO schema_meta (version) VALUES (?1)",
+                        params![SCHEMA_VERSION],
+                    )
+                    .map_err(to_storage_error)?;
+            }
+            _ => {}
         }
         Ok(())
     }
@@ -106,17 +141,29 @@ mod tests {
     use rusqlite::Connection;
     use std::env;
 
-    fn test_db_path() -> PathBuf {
-        env::temp_dir().join("aqevia_storage_test.db")
+    fn test_db_path(name: &str) -> PathBuf {
+        env::temp_dir().join(format!("aqevia_storage_test_{}.db", name))
+    }
+
+    fn cleanup(path: &Path) {
+        let _ = fs::remove_file(path);
     }
 
     #[test]
-    fn migrations_create_tables() {
-        let path = test_db_path();
-        let _ = fs::remove_file(&path);
+    fn bootstrap_creates_schema_and_version_stamp() {
+        let path = test_db_path("bootstrap");
+        cleanup(&path);
         let mut storage = SqliteStorage::new(&path).unwrap();
         storage.init().unwrap();
         let connection = Connection::open(&path).unwrap();
+        let version: i64 = connection
+            .query_row(
+                "SELECT version FROM schema_meta ORDER BY id DESC LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
         let count: i64 = connection
             .query_row("SELECT COUNT(*) FROM world_records", [], |row| row.get(0))
             .unwrap_or(0);
@@ -124,9 +171,49 @@ mod tests {
     }
 
     #[test]
+    fn schema_reset_on_version_mismatch() {
+        let path = test_db_path("mismatch");
+        cleanup(&path);
+        {
+            let mut storage = SqliteStorage::new(&path).unwrap();
+            storage.init().unwrap();
+        }
+        {
+            let connection = Connection::open(&path).unwrap();
+            connection
+                .execute(
+                    "UPDATE schema_meta SET version = ?1",
+                    params![SCHEMA_VERSION - 1],
+                )
+                .unwrap();
+            connection
+                .execute(
+                    "INSERT INTO world_records (world_id, payload, timestamp) VALUES (?1, ?2, ?3)",
+                    params!["world", "payload", 0],
+                )
+                .unwrap();
+        }
+        let mut storage = SqliteStorage::new(&path).unwrap();
+        storage.init().unwrap();
+        let connection = Connection::open(&path).unwrap();
+        let version: i64 = connection
+            .query_row(
+                "SELECT version FROM schema_meta ORDER BY id DESC LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
+        let count: i64 = connection
+            .query_row("SELECT COUNT(*) FROM world_records", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
     fn sqlite_persists_batch_records() {
-        let path = test_db_path();
-        let _ = fs::remove_file(&path);
+        let path = test_db_path("persist");
+        cleanup(&path);
         let backend = SqliteStorage::new(&path).unwrap();
         let mut controller = StorageController::new(
             backend,

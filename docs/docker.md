@@ -32,3 +32,16 @@ Compose reads this file and interpolates `${AQEVIA_VERSION}` in `docker-compose.
 2. Run `./scripts/sync-version` (regenerates `.env`).
 3. Run `./scripts/check-version-sync`.
 4. Run `docker compose up -d --build`.
+
+## Runtime configuration (env)
+
+Compose passes the following env vars into the runtime image so defaults remain deterministic:
+
+- `AQEVIA_SQLITE_PATH=/data/storage.sqlite` — durable store location inside the container (matches the Dockerfile default); override if you mount a different data volume.
+- `PERSIST_FLUSH_INTERVAL_MS=1000` and `PERSIST_BATCH_CAPACITY=10` — tune the persistence cadence and bounded batch size when you need throughput or durability adjustments.
+- `AQEVIA_OBSERVABILITY_ADDR=0.0.0.0:7878` — opens `/health`, `/ready`, and `/status` on port 7878 inside the container and can be rewritten by external proxies; keep the listener per-process and do not expose it publicly without a trusted proxy (see `docs/engine/http-conventions.md` for runtime defaults).
+
+## Deployment constraints
+
+- **1 World = 1 deployment unit.** Each Docker container runs exactly one Aqevia Engine and its associated World, so scale by running additional containers rather than sharing a container between Worlds.
+- Observability and control-plane endpoints stay on the same HTTP origin (the unified SPA model) while `/health`, `/ready`, and `/status` are exposed on `AQEVIA_OBSERVABILITY_ADDR`. Avoid binding that address to public interfaces without extra gateway protections, especially since `/status` discloses runtime metrics.
