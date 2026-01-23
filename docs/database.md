@@ -19,11 +19,27 @@ Describes the persistence model, schema conventions, and schema bootstrap practi
 
 ## SQLite backend (initial implementation)
 
-- `aqevia-storage-sqlite` is the first backend. It stores records in `world_records` and keeps `schema_meta` as a schema version stamp for deterministic bootstrap.
-- Schema:
-- `schema_meta(id INTEGER PRIMARY KEY, version INTEGER)` marks the schema version detected during startup.
-- `world_records(id INTEGER PRIMARY KEY, world_id TEXT, payload TEXT, timestamp INTEGER)` stores the durable snapshots/history emitted by the Engine.
-- Schema bootstrap runs via `init()` and is idempotent (`CREATE TABLE IF NOT EXISTS …`). Startup writes an initial `schema_meta` row (version `1`) when the table is empty. During development, schema changes trigger a reset: the database is dropped/recreated (or the tables are dropped) so storage reinitializes from scratch (no incremental upgrades). Production-grade schema transitions that preserve data are deferred until after 1.0 when a dedicated upgrade plan is introduced.
+- `aqevia-storage-sqlite` stores records in `world_records` and keeps `schema_meta` as a schema version stamp so every bootstrap can detect mismatches.
+
+### SQLite schema
+
+- `schema_meta` (purpose: schema version guard)
+  - `id INTEGER PRIMARY KEY` — surrogate key for the stamp.
+  - `version INTEGER NOT NULL` — stores the compiled `SCHEMA_VERSION` (`1` today) so bootstrap knows whether the on-disk format matches the code-generated schema.
+  - Expectation: each bootstrap writes a single row with the current schema version; if the row is missing (new database) or stale (version mismatch), the bootstrap path resets the schema before inserting the new stamp.
+- `world_records` (purpose: durable snapshots)
+  - `id INTEGER PRIMARY KEY` — sequential identifier assigned by SQLite.
+  - `world_id TEXT NOT NULL` — the World identifier from `WorldRecord::world_id`.
+  - `payload TEXT NOT NULL` — serialized snapshot from `WorldRecord::payload`.
+  - `timestamp INTEGER NOT NULL` — `WorldRecord::timestamp` expressed as seconds since Unix epoch.
+  - This table holds the buffered records that the Engine flushes according to `StorageConfig` ("batch capacity" / "flush interval"); each flush inserts a batch of rows inside a SQLite transaction.
+
+### Bootstrap + dev reset semantics
+
+- On startup, `StorageBackend::init` executes the schema creation statements (`CREATE TABLE IF NOT EXISTS …`) and attempts to read the latest `version` from `schema_meta`.
+- If no version row exists, the backend inserts `SCHEMA_VERSION` (currently `1`) and continues.
+- If the stored version differs from `SCHEMA_VERSION`, the backend drops `schema_meta` and `world_records`, recreates the schema, and writes the fresh version stamp. This aligns with the “reset-on-mismatch” development posture—there is no upgrade or migration path yet, and the database is returned to a clean state rather than trying to reconcile incompatible schemas.
+- Because Schema resets discard persisted rows, development data is disposable, matching the early-stage rule that bootstrapping starts from scratch rather than preserving history.
 
 ## Dirty tracking and flush policy
 
