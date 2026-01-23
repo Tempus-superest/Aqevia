@@ -1,7 +1,10 @@
 # Build-time version stamp for OCI metadata in the final image.
-ARG VERSION=0.0.1
+ARG AQEVIA_VERSION
 
 FROM rust:1.92.0-slim-trixie
+ARG AQEVIA_VERSION
+LABEL org.opencontainers.image.title=Aqevia
+LABEL org.opencontainers.image.version=$AQEVIA_VERSION
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \

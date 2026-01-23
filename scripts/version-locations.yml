@@ -1,3 +1,20 @@
 targets:
   - path: VERSION
     description: Primary version source for Aqevia releases.
+  - path: Dockerfile
+    contains: "ARG AQEVIA_VERSION"
+    description: Build argument exposes the release number during image assembly.
+  - path: Dockerfile
+    contains: "LABEL org.opencontainers.image.title=Aqevia"
+    description: OCI metadata includes the project title.
+  - path: Dockerfile
+    contains: "LABEL org.opencontainers.image.version=$AQEVIA_VERSION"
+    description: OCI metadata labels the build version.
+  - path: docker-compose.yml
+    contains: "image: aqevia-engine:${AQEVIA_VERSION}"
+    description: Compose tags the built image with the canonical version.
+  - path: docker-compose.yml
+    contains: "AQEVIA_VERSION: ${AQEVIA_VERSION}"
+    description: Compose forwards the version to Docker builds.
+  - path: .env
+    description: Compose default env file exports AQEVIA_VERSION from `VERSION`.

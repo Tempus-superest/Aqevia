@@ -36,6 +36,7 @@ JSCover/
 .env
 .env.test
 .env.*
+!.env
 !.env.example
 
 # Next.js build output

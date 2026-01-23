@@ -51,3 +51,7 @@ if [ "$target_count" -eq 0 ]; then
 else
   printf 'Registered %s target(s); no updates were applied.\n' "$target_count"
 fi
+
+ENV_FILE=".env"
+printf 'AQEVIA_VERSION=%s\n' "$version" > "$ENV_FILE"
+printf 'Synced %s with AQEVIA_VERSION=%s\n' "$ENV_FILE" "$version"

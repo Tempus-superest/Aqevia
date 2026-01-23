@@ -38,11 +38,13 @@ Human-facing labels (CLI prompts, README titles, tags) display as `vX.Y.Z`; the 
 - `scripts/version-locations.yml` is the authoritative registry of every derived target that gets stamped with the repo version.
 - `scripts/sync-version` updates **only** the entries declared in that registry; do not bypass the registry with manual search/replace.
 - `scripts/check-version-sync` confirms there is no drift between `VERSION` and every registered target.
+- The registry now includes Compose’ `.env` file so `AQEVIA_VERSION` stays aligned with `VERSION` every time `scripts/sync-version` runs.
 
 ## 5. Bump workflow (mandatory, step-by-step)
 
 1. Edit root `VERSION` to the desired semver.
 2. Run `scripts/sync-version` to deterministically update every registered target.
+   The script also rewrites `.env` with `AQEVIA_VERSION=<version>` so Docker Compose can read the canonical version without manual `export`.
 3. Run `scripts/check-version-sync` to prove there is no drift.
 4. Regenerate derived lockfiles via the tooling the sync script invokes (typically `cargo generate-lockfile` for Rust and `npm install --package-lock-only` (or equivalent) in the UI directory) rather than hand-editing them.
    - **DO** let automation regenerate lockfiles alongside the sync step.

@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+set -o pipefail
 
 cd "$(dirname "$0")/.."
 
@@ -29,31 +30,91 @@ if [ ! -f "$LOCATIONS_FILE" ]; then
   error_exit "Missing $LOCATIONS_FILE"
 fi
 
-target_paths=''
-if ! target_paths=$(grep -E '^[[:space:]]*- path:' "$LOCATIONS_FILE" | sed -E 's/^[[:space:]]*- path:[[:space:]]*//'); then
-  target_paths=''
-fi
+printf 'Verified %s contains version %s\n' "$VERSION_FILE" "$version"
+
+strip_quotes() {
+  value="$1"
+  while :; do
+    case "$value" in
+      \"*\" )
+        value=${value#\"}
+        value=${value%\"}
+        ;;
+      \'*\' )
+        value=${value#\'}
+        value=${value%\'}
+        ;;
+      * )
+        break
+        ;;
+    esac
+  done
+  printf '%s' "$value"
+}
+
+current_path=""
+current_contains=""
+current_description=""
 target_count=0
 
-if [ -n "$target_paths" ]; then
-  while IFS= read -r target; do
-    target=$(printf '%s' "$target" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    if [ -z "$target" ]; then
-      continue
+flush_target() {
+  if [ -z "$current_path" ]; then
+    return
+  fi
+  target_count=$((target_count + 1))
+  if [ "$current_path" = "$VERSION_FILE" ]; then
+    current_path=""
+    current_contains=""
+    current_description=""
+    return
+  fi
+  if [ ! -f "$current_path" ]; then
+    error_exit "Registered target not found: $current_path"
+  fi
+  if [ "$current_path" = ".env" ]; then
+    expected="AQEVIA_VERSION=$version"
+    if ! grep -Fx -- "$expected" "$current_path" >/dev/null 2>&1; then
+      error_exit "Expected snippet \"$expected\" not present in $current_path"
     fi
-    target_count=$((target_count + 1))
-    if [ ! -f "$target" ]; then
-      error_exit "Registered target not found: $target"
+    printf 'Verified %s contains "%s"\n' "$current_path" "$expected"
+  elif [ -n "$current_contains" ]; then
+    expected="$current_contains"
+    if ! grep -F -- "$expected" "$current_path" >/dev/null 2>&1; then
+      error_exit "Expected snippet \"$expected\" not present in $current_path"
     fi
-    target_version=$(sed -n '1p' "$target" | tr -d '[:space:]')
-    if [ "$target_version" != "$version" ]; then
-      error_exit "Version mismatch in $target (expected $version, found $target_version)"
-    fi
-    printf 'Verified %s contains version %s\n' "$target" "$version"
-  done <<EOF
-$target_paths
-EOF
-fi
+    printf 'Verified %s contains "%s"\n' "$current_path" "$expected"
+  else
+    printf 'Verified %s (registered target: %s)\n' "$current_path" "${current_description:-registered target}"
+  fi
+  current_path=""
+  current_contains=""
+  current_description=""
+}
+
+while IFS= read -r line; do
+  trimmed=$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  if [ -z "$trimmed" ]; then
+    continue
+  fi
+  case "$trimmed" in
+    -\ path:*)
+      flush_target
+      current_path=$(printf '%s' "$trimmed" | sed -E 's/^- path:[[:space:]]*//')
+      current_contains=""
+      current_description=""
+      ;;
+    contains:*)
+      value=$(printf '%s' "$trimmed" | sed -E 's/^contains:[[:space:]]*//')
+      current_contains=$(strip_quotes "$value")
+      ;;
+    description:*)
+      value=$(printf '%s' "$trimmed" | sed -E 's/^description:[[:space:]]*//')
+      current_description=$(strip_quotes "$value")
+      ;;
+  esac
+done < "$LOCATIONS_FILE"
+
+flush_target
 
 if [ "$target_count" -eq 0 ]; then
   printf 'Version %s has no registered targets to verify.\n' "$version"
