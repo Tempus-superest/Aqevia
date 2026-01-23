@@ -1,3 +1,3 @@
 # UI Workspace Placeholder
 
-Top-level directory for Client, Builder, Admin, and shared UI packages.
+Aqevia Web UI is delivered as one unified SPA served by the Engine at `/` with role-gated `/admin/*`, `/builder/*`, and `/client/*` areas; this workspace contains the Client, Builder, Admin, and shared packages for that SPA.

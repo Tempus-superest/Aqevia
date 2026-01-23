@@ -24,12 +24,12 @@ We expect thorough coverage over time: **if a feature exists, it should be teste
 ## Common local test commands
 
 These commands are intended as stable entrypoints. If the repo later adds wrappers (e.g., `make`, `just`, or `scripts/*`), keep this section updated so there is a single obvious way to run checks locally.
-Use `./scripts/test.sh` as the canonical local command; it runs the commands listed below.
+Use `./scripts/test.sh` as the canonical local command; it sets `CARGO_INCREMENTAL=0`, runs from the workspace root, and executes the commands listed below in order (`cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all`).
 
 - `./scripts/test.sh` _(preferred entrypoint; runs the commands below)_
-- `cargo fmt --check`
-- `cargo clippy --all-targets --all-features -D warnings`
-- `cargo test`
+- `cargo fmt --all -- --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test --all`
 
 If/when the Web UI gains automated tests, add the corresponding command here (e.g., `npm test` / `pnpm test` in the UI directory) and ensure it runs offline.
 

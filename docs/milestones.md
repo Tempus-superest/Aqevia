@@ -9,6 +9,32 @@ This document slices the Aqevia effort into Codex-sized deliverables. Each miles
 - Always include the **Local verification** commands after implementation; reuse `./scripts/test.sh` when formatting/lint/testing work is required.  
 - Maintain the unified **Aqevia Web UI** SPA intent whenever UIs, routing, or documentation surfaces are touched: `/`, `/client/*`, `/builder/*`, `/admin/*` all share one entry point.
 
+## Docs index
+
+All canonical `/docs/*` contracts referenced in `/AGENTS.md` are enumerated here to keep writers aligned on the architecture, transport, UI, persistence, AI, and operations expectations. The list below covers every contract, including the unified Aqevia Web UI delivered by the Engine at `/` with role-gated `/client/*`, `/builder/*`, and `/admin/*` areas.
+
+- `/docs/spec.md` — end-to-end system architecture, layout, and boundaries.
+- `/docs/aqevia-engine.md` — server runtime design and boundaries.
+- `/docs/engine/protocol.md` — entrypoint for Engine contracts (WS data plane, HTTP control plane, AI integration, observability).
+- `/docs/engine/ws-session.md` — WebSocket gameplay session protocol.
+- `/docs/engine/http-conventions.md` — shared HTTP conventions (auth, errors, pagination, idempotency, rate limits).
+- `/docs/engine/builder-api.md` — Builder HTTP API contract (authoritative content mutations).
+- `/docs/engine/admin-api.md` — Admin HTTP API contract (world management and moderation).
+- `/docs/engine/observability-api.md` — health/metrics/status/log access conventions.
+- `/docs/engine/ai-builder.md` — AI Assist HTTP endpoints (draft/proposal generation only).
+- `/docs/engine/ai-runtime.md` — runtime AI narrative assistant model (async jobs, streaming output, guardrails).
+- `/docs/engine/ai-providers.md` — AI Provider abstraction (local/cloud), secrets, timeouts, retries, streaming capability flags.
+- `/docs/aqevia-client.md` — player UI design and interaction flows.
+- `/docs/aqevia-builder.md` — world-building UI design and publishing workflow.
+- `/docs/aqevia-admin.md` — admin UI design and operator workflows.
+- `/docs/database.md` — persistence model, schema conventions, migrations.
+- `/docs/docker.md` — Docker deployment standards and single-world container behavior.
+- `/docs/testing.md` — testing strategy and required coverage expectations.
+- `/docs/versioning.md` — protocol/API versioning and compatibility rules.
+- `/docs/security.md` — auth, secrets handling, input validation, threat notes.
+- `/docs/style.md` — code style, module layout, naming, linting, and formatting rules.
+- `/docs/milestones.md` — milestone deliverables, acceptance criteria, and verification commands.
+
 ## Phase 0 — Baseline documentation & workspace hygiene
 
 ### 0.1 Canonical docs & layout

@@ -1,6 +1,7 @@
-version: "3.8"
 services:
   aqevia-engine:
+  # Image tag tracks the Backlit semantic version (vMAJOR.MINOR.REV) to keep deployments aligned with releases.
+    image: aqevia:v0.0.1
     build:
       context: .
     container_name: aqevia-engine

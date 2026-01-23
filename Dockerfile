@@ -1,3 +1,6 @@
+# Build-time version stamp for OCI metadata in the final image.
+ARG VERSION=0.0.1
+
 FROM rust:1.92.0-slim-trixie
 
 RUN apt-get update && \
