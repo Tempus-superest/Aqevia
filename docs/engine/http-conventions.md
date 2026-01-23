@@ -19,6 +19,8 @@ Covers shared HTTP conventions such as authentication, error handling, paginatio
 - `/ready` returns `200 OK` once storage has initialized, and `503 Service Unavailable` with `{"status":"initializing"}` prior to readiness.
 - `/status` returns `200 OK` containing version, uptime, storage_backend, flush statistics, and any stored error state in JSON. A missing metric should be represented by `null`.
 
+Observability endpoints live under `aqevia-transport` (see `docs/engine/observability-api.md`). They always set `Content-Type: application/json` (or plain text for `/health`), `Cache-Control: no-store`, and return consistent status bodies so caches do not retain stale readiness data.
+
 ## Runtime configuration defaults
 
 - `AQEVIA_OBSERVABILITY_ADDR` determines where the Engine binds `/health`, `/ready`, and `/status`. The default `0.0.0.0:7878` aligns with the Docker stack, but operators may scope it to `127.0.0.1:7878` for tighter security; in either case the Router only serves those endpoints after the Kernel and Router have bootstrapped.
